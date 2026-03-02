@@ -29,6 +29,7 @@ class HeartbeatService:
         self.is_registered = False
         self.organization_id: Optional[str] = None
         self.last_heartbeat_status: Optional[str] = None
+        self.last_error: Optional[str] = None
         self.error_count = 0
         
         logger.info(f"HeartbeatService initialized for {self.backend_url}")
@@ -54,14 +55,17 @@ class HeartbeatService:
                     data = response.json()
                     self.is_registered = True
                     self.organization_id = data.get("organization_id")
+                    self.last_error = None
                     logger.info(f"Agent registered successfully. Org: {self.organization_id}")
                     return {"success": True, "data": data}
                 else:
-                    logger.error(f"Registration failed: {response.status_code} - {response.text}")
+                    self.last_error = f"Registration failed: {response.status_code} - {response.text}"
+                    logger.error(self.last_error)
                     return {"success": False, "error": response.text}
                     
         except httpx.RequestError as e:
-            logger.error(f"Registration request failed: {e}")
+            self.last_error = f"Registration request failed: {e}"
+            logger.error(self.last_error)
             return {"success": False, "error": str(e)}
     
     async def send_heartbeat(self) -> None:
@@ -81,7 +85,7 @@ class HeartbeatService:
             "agentVersion": "1.0.0",
             "status": "online",
             "errorCount": self.error_count,
-            "lastError": None
+            "lastError": self.last_error
         }
         
         try:
@@ -95,16 +99,19 @@ class HeartbeatService:
                 if response.status_code == 200:
                     self.last_heartbeat_status = "ok"
                     self.error_count = 0
+                    self.last_error = None
                     logger.debug("Heartbeat sent successfully")
                 else:
                     self.last_heartbeat_status = "error"
+                    self.last_error = f"Heartbeat failed: {response.status_code} - {response.text}"
                     self.error_count += 1
-                    logger.warning(f"Heartbeat failed: {response.status_code}")
+                    logger.warning(self.last_error)
                     
         except httpx.RequestError as e:
             self.last_heartbeat_status = "error"
+            self.last_error = f"Heartbeat request failed: {e}"
             self.error_count += 1
-            logger.error(f"Heartbeat request failed: {e}")
+            logger.error(self.last_error)
     
     def start(self) -> None:
         """Start the heartbeat scheduler"""
@@ -136,6 +143,7 @@ class HeartbeatService:
             "is_registered": self.is_registered,
             "organization_id": self.organization_id,
             "last_status": self.last_heartbeat_status,
+            "last_error": self.last_error,
             "error_count": self.error_count,
             "scheduler_running": self.scheduler is not None and self.scheduler.running
         }

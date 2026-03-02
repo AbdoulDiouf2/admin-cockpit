@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -197,10 +198,124 @@ async def get_status(
     }
 
 
-@router.get("/tables", tags=["Info"])
-async def get_allowed_tables(config = Depends(get_config)):
-    """Get list of allowed tables for querying"""
-    return {
-        "allowed_tables": config.security.allowed_tables,
-        "count": len(config.security.allowed_tables)
-    }
+@router.get("/debug", response_class=HTMLResponse, include_in_schema=False)
+async def debug_dashboard(
+    request: Request,
+    database = Depends(get_database),
+    heartbeat = Depends(get_heartbeat),
+    config = Depends(get_config)
+):
+    """
+    Visual debug dashboard for the agent.
+    """
+    sage_status = database.get_status()
+    hb_status = heartbeat.get_status()
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>InsightSage Agent - Debug</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; }}
+            .glass {{
+                background: rgba(30, 41, 59, 0.7);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 1rem;
+            }}
+            .status-ok {{ color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }}
+            .status-error {{ color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3); }}
+            .pulse {{ animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }}
+            @keyframes pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: .5; }} }}
+        </style>
+    </head>
+    <body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8 pb-6 border-b border-slate-800">
+                <div>
+                    <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
+                        InsightSage Agent
+                    </h1>
+                    <p class="text-slate-400 mt-1 uppercase tracking-widest text-xs font-semibold">Local Diagnostic Dashboard</p>
+                </div>
+                <div class="text-right">
+                    <span class="px-3 py-1 glass text-xs font-mono text-slate-300">v1.0.0</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Sage Connection Card -->
+                <div class="glass p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-200">Sage SQL Server</h2>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2 {'bg-green-400' if sage_status['connected'] else 'bg-red-400 pulse'}"></div>
+                            <span class="text-xs font-bold uppercase tracking-tighter {'status-ok' if sage_status['connected'] else 'status-error'}">
+                                {('Connected' if sage_status['connected'] else 'Disconnected')}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b border-slate-800/50 pb-2">
+                            <span class="text-slate-400 text-sm">Instance</span>
+                            <span class="text-slate-200 text-sm font-mono">{sage_status['config']['host']}:{sage_status['config']['port']}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800/50 pb-2">
+                            <span class="text-slate-400 text-sm">Database</span>
+                            <span class="text-slate-200 text-sm font-mono">{sage_status['config']['database']}</span>
+                        </div>
+                        {f'''<div class="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded-md">
+                            <p class="text-red-400 text-xs font-mono break-all">{sage_status['last_error']}</p>
+                        </div>''' if sage_status['last_error'] else ''}
+                    </div>
+                </div>
+
+                <!-- Backend Connection Card -->
+                <div class="glass p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-200">Backend SaaS</h2>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2 {'bg-green-400' if hb_status['is_registered'] else 'bg-red-400 pulse'}"></div>
+                            <span class="text-xs font-bold uppercase tracking-tighter {'status-ok' if hb_status['is_registered'] else 'status-error'}">
+                                {('Registered' if hb_status['is_registered'] else 'Not Registered')}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b border-slate-800/50 pb-2">
+                            <span class="text-slate-400 text-sm">Organization ID</span>
+                            <span class="text-slate-200 text-sm font-mono truncate ml-4" title="{hb_status['organization_id']}">{hb_status['organization_id'] or '—'}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800/50 pb-2">
+                            <span class="text-slate-400 text-sm">Last Heartbeat</span>
+                            <span class="text-slate-200 text-sm font-mono">{hb_status['last_status'] or 'Pending'}</span>
+                        </div>
+                        {f'''<div class="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded-md">
+                            <p class="text-red-400 text-xs font-mono break-all">{hb_status['last_error']}</p>
+                        </div>''' if hb_status['last_error'] else ''}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration & Whitelist -->
+            <div class="glass p-6">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4">Security Whitelist</h2>
+                <div class="flex flex-wrap gap-2">
+                    {" ".join([f'<span class="px-2 py-1 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-300 font-mono">{table}</span>' for table in config.security.allowed_tables])}
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center text-slate-500 text-xs">
+                Uptime: 1.0.0 | Refresh manually to update status
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)

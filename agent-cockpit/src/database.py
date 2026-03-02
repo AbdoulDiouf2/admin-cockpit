@@ -23,7 +23,24 @@ class SageDatabase:
         self.validator = validator
         self.timeout = timeout
         self._connection_string = self._build_connection_string()
+        self.last_error = None
         logger.info(f"SageDatabase initialized for {config.type} on {config.host}:{config.port}")
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get database connectivity status"""
+        ok, msg = self.test_connection()
+        if not ok:
+            self.last_error = msg
+        return {
+            "connected": ok,
+            "message": msg,
+            "last_error": self.last_error,
+            "config": {
+                "host": self.config.host,
+                "port": self.config.port,
+                "database": self.config.database
+            }
+        }
     
     def _build_connection_string(self) -> str:
         """Build ODBC connection string"""
