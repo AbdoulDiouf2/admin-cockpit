@@ -1,42 +1,42 @@
 import api from './client';
-import type { 
-  User, 
-  Organization, 
-  Role, 
+import type {
+  User,
+  Organization,
+  Role,
   Permission,
-  Agent, 
+  Agent,
   AuditLog,
   LoginCredentials,
   AuthResponse,
-  PaginatedResponse 
+  PaginatedResponse
 } from '@/types';
 
 // Auth
 export const authApi = {
-  login: (credentials: LoginCredentials) => 
+  login: (credentials: LoginCredentials) =>
     api.post<AuthResponse>('/auth/login', credentials),
-  
-  logout: () => 
+
+  logout: () =>
     api.post('/auth/logout'),
-  
-  refresh: () => 
+
+  refresh: () =>
     api.post('/auth/refresh'),
-  
-  me: () => 
+
+  me: () =>
     api.get<User>('/users/me'),
 };
 
 // Admin - Organizations
 export const organizationsApi = {
-  getAll: () => 
+  getAll: () =>
     api.get<Organization[]>('/admin/organizations'),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     api.get<Organization>(`/admin/organizations/${id}`),
-  
-  update: (id: string, data: Partial<Organization>) => 
+
+  update: (id: string, data: Partial<Organization>) =>
     api.patch<Organization>(`/admin/organizations/${id}`, data),
-  
+
   createClient: (data: {
     organizationName: string;
     adminEmail: string;
@@ -45,51 +45,57 @@ export const organizationsApi = {
   }) => api.post('/admin/clients', data),
 };
 
+// Admin - General
+export const adminApi = {
+  getStats: () =>
+    api.get('/admin/dashboard-stats'),
+};
+
 // Admin - Users
 export const usersApi = {
-  getAll: () => 
+  getAll: () =>
     api.get<User[]>('/admin/users'),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     api.get<User>(`/users/${id}`),
-  
-  update: (id: string, data: Partial<User>) => 
+
+  update: (id: string, data: Partial<User>) =>
     api.patch<User>(`/admin/users/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     api.delete(`/admin/users/${id}`),
 };
 
 // Roles
 export const rolesApi = {
-  getAll: () => 
+  getAll: () =>
     api.get<Role[]>('/roles'),
-  
-  getPermissions: () => 
+
+  getPermissions: () =>
     api.get<Permission[]>('/roles/permissions'),
-  
-  create: (data: { name: string; description?: string; permissionIds: string[] }) => 
+
+  create: (data: { name: string; description?: string; permissionIds: string[] }) =>
     api.post<Role>('/roles', data),
-  
-  update: (id: string, data: Partial<Role>) => 
+
+  update: (id: string, data: Partial<Role>) =>
     api.patch<Role>(`/roles/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     api.delete(`/roles/${id}`),
 };
 
 // Agents
 export const agentsApi = {
-  getStatus: () => 
+  getStatus: () =>
     api.get('/agents/status'),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     api.get<Agent>(`/agents/${id}`),
-  
-  generateToken: (data: { name?: string; force?: boolean }) => 
+
+  generateToken: (data: { name?: string; force?: boolean }) =>
     api.post('/agents/generate-token', data),
-  
-  regenerateToken: (id: string) => 
+
+  regenerateToken: (id: string) =>
     api.post(`/agents/${id}/regenerate-token`),
 };
 
@@ -103,16 +109,16 @@ export const auditLogsApi = {
     limit?: number;
     offset?: number;
   }) => api.get<PaginatedResponse<AuditLog>>('/admin/audit-logs', { params }),
-  
-  getEventTypes: () => 
+
+  getEventTypes: () =>
     api.get<{ event: string; count: number }[]>('/logs/audit/events'),
 };
 
 // Health
 export const healthApi = {
-  check: () => 
+  check: () =>
     api.get('/health'),
-  
-  checkDb: () => 
+
+  checkDb: () =>
     api.get('/health/db'),
 };
