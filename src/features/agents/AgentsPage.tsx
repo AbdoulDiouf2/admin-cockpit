@@ -1,22 +1,28 @@
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Cpu, Key, Loader2, Circle } from 'lucide-react';
-import { agentsApi } from '@/api';
+import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { useAgents } from '@/hooks/use-api';
 import { Agent } from '@/types';
+import { GenerateTokenModal } from './GenerateTokenModal';
+import { RegenerateTokenModal } from './RegenerateTokenModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { format } from 'date-fns';
 
 export function AgentsPage() {
   const { t } = useTranslation();
+  const [generateOpen, setGenerateOpen] = useState(false);
+  const [regenerateAgent, setRegenerateAgent] = useState<Agent | null>(null);
 
-  const { data: agents, isLoading, error } = useQuery({
-    queryKey: ['agents-status'],
-    queryFn: async () => {
-      const response = await agentsApi.getStatus();
-      return response.data as Agent[];
-    },
-  });
+  const { data: agents, isLoading, error, isFetching } = useAgents();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -24,6 +30,15 @@ export function AgentsPage() {
       case 'offline': return 'text-gray-400 fill-gray-400';
       case 'error': return 'text-destructive fill-destructive';
       default: return 'text-yellow-500 fill-yellow-500';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'online': return t('agents.online');
+      case 'offline': return t('agents.offline');
+      case 'error': return t('agents.error');
+      default: return t('agents.pending');
     }
   };
 
@@ -35,7 +50,7 @@ export function AgentsPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t('agents.title')}</h1>
           <p className="text-muted-foreground">{t('agents.subtitle')}</p>
         </div>
-        <Button data-testid="generate-token-btn">
+        <Button data-testid="generate-token-btn" onClick={() => setGenerateOpen(true)}>
           <Key className="h-4 w-4 mr-2" />
           {t('agents.generateToken')}
         </Button>
@@ -44,13 +59,19 @@ export function AgentsPage() {
       {/* Agents list */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Cpu className="h-5 w-5" />
-            {t('agents.listTitle') || 'Agents on-premise'}
-          </CardTitle>
-          <CardDescription>
-            {t('agents.listSubtitle') || 'Monitoring des agents déployés chez les clients'}
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="h-5 w-5" />
+                {t('agents.listTitle')}
+              </CardTitle>
+              <CardDescription>{t('agents.listSubtitle')}</CardDescription>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <RefreshCw className={`h-3 w-3 ${isFetching && !isLoading ? 'animate-spin' : ''}`} />
+              {t('agents.pollingActive')}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -70,7 +91,8 @@ export function AgentsPage() {
                     <TableHead>Statut</TableHead>
                     <TableHead>Version</TableHead>
                     <TableHead>Données synchronisées</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Dernière synchro</TableHead>
+                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -80,22 +102,51 @@ export function AgentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Circle className={`h-2 w-2 ${getStatusColor(agent.status)}`} />
-                          <span className="capitalize">{agent.status}</span>
+                          <span className="text-sm">{getStatusLabel(agent.status)}</span>
                         </div>
+                        {agent.status === 'error' && agent.lastError && (
+                          <p className="text-xs text-destructive mt-1 max-w-[200px] truncate">
+                            {agent.lastError}
+                          </p>
+                        )}
                       </TableCell>
-                      <TableCell>{agent.version || 'v1.0.0'}</TableCell>
-                      <TableCell>{agent.rowsSynced?.toLocaleString() || 0} lignes</TableCell>
+                      <TableCell>{agent.version || '—'}</TableCell>
+                      <TableCell>
+                        {agent.rowsSynced?.toLocaleString() || 0} lignes
+                        {agent.errorCount > 0 && (
+                          <span className="ml-2 text-xs text-destructive">
+                            ({agent.errorCount} erreur{agent.errorCount > 1 ? 's' : ''})
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {agent.lastSync
+                          ? format(new Date(agent.lastSync), 'dd/MM/yyyy HH:mm')
+                          : '—'}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          Logs
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Ouvrir menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setRegenerateAgent(agent)}>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              {t('agents.regenerateToken')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
                   {agents?.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        Aucun agent trouvé.
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        {t('common.noData')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -105,6 +156,16 @@ export function AgentsPage() {
           )}
         </CardContent>
       </Card>
+
+      <GenerateTokenModal open={generateOpen} onOpenChange={setGenerateOpen} />
+
+      <RegenerateTokenModal
+        open={regenerateAgent !== null}
+        onOpenChange={(open) => {
+          if (!open) setRegenerateAgent(null);
+        }}
+        agent={regenerateAgent}
+      />
     </div>
   );
 }

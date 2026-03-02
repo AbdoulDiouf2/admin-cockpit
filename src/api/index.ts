@@ -59,11 +59,14 @@ export const usersApi = {
   getById: (id: string) =>
     api.get<User>(`/users/${id}`),
 
-  update: (id: string, data: Partial<User>) =>
+  update: (id: string, data: Partial<User> & { isActive?: boolean }) =>
     api.patch<User>(`/admin/users/${id}`, data),
 
   delete: (id: string) =>
     api.delete(`/admin/users/${id}`),
+
+  invite: (data: { email: string; role: string; organizationId: string }) =>
+    api.post('/auth/invite', data),
 };
 
 // Roles
@@ -108,7 +111,7 @@ export const auditLogsApi = {
     endDate?: string;
     limit?: number;
     offset?: number;
-  }) => api.get<PaginatedResponse<AuditLog>>('/admin/audit-logs', { params }),
+  }) => api.get<PaginatedResponse<AuditLog>>('/logs/audit', { params }),
 
   getEventTypes: () =>
     api.get<{ event: string; count: number }[]>('/logs/audit/events'),

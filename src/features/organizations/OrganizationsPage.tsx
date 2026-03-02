@@ -5,6 +5,7 @@ import { Plus, Building2, Loader2, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
+import { EditOrganizationModal } from './EditOrganizationModal';
 import { DataTable } from '@/components/shared/DataTable';
 import { useOrganizations } from '@/hooks/use-api';
 import { ColumnDef } from '@tanstack/react-table';
@@ -15,13 +16,30 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type StatusFilter = 'all' | 'active' | 'inactive';
 
 export function OrganizationsPage() {
   const { t } = useTranslation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editOrg, setEditOrg] = useState<Organization | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const { data: organizations, isLoading, error } = useOrganizations();
+
+  const filteredOrganizations = (organizations || []).filter((org) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'active') return !!org.ownerId;
+    return !org.ownerId;
+  });
 
   const columns: ColumnDef<Organization>[] = [
     {
@@ -32,13 +50,25 @@ export function OrganizationsPage() {
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ row }) => <div className="text-sm font-mono">{row.getValue('id')}</div>,
+      cell: ({ row }) => (
+        <div className="text-sm font-mono text-muted-foreground truncate max-w-[180px]">
+          {row.getValue('id')}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'plan',
+      header: 'Plan',
+      cell: ({ row }) => {
+        const plan = row.getValue('plan') as string | undefined;
+        return <span className="capitalize text-sm">{plan || '—'}</span>;
+      },
     },
     {
       accessorKey: 'status',
       header: 'Statut',
       cell: () => (
-        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
+        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
           Active
         </span>
       ),
@@ -67,8 +97,9 @@ export function OrganizationsPage() {
                   Copier l'ID
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Éditer</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Désactiver</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEditOrg(org)}>
+                  {t('common.edit')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -94,13 +125,28 @@ export function OrganizationsPage() {
       {/* Organizations list */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            {t('organizations.listTitle') || 'Liste des organisations'}
-          </CardTitle>
-          <CardDescription>
-            {t('organizations.listSubtitle') || 'Toutes les organisations enregistrées sur la plateforme'}
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                {t('organizations.listTitle')}
+              </CardTitle>
+              <CardDescription>{t('organizations.listSubtitle')}</CardDescription>
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('organizations.statusAll')}</SelectItem>
+                <SelectItem value="active">{t('organizations.statusActive')}</SelectItem>
+                <SelectItem value="inactive">{t('organizations.statusInactive')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -112,7 +158,7 @@ export function OrganizationsPage() {
               Erreur lors du chargement des organisations
             </div>
           ) : (
-            <DataTable columns={columns} data={organizations || []} searchKey="name" />
+            <DataTable columns={columns} data={filteredOrganizations} searchKey="name" />
           )}
         </CardContent>
       </Card>
@@ -120,6 +166,13 @@ export function OrganizationsPage() {
       <CreateOrganizationModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
+      />
+      <EditOrganizationModal
+        open={editOrg !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditOrg(null);
+        }}
+        organization={editOrg}
       />
     </div>
   );

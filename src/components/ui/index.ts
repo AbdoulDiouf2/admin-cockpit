@@ -12,3 +12,7 @@ export * from './table';
 export * from './form';
 export * from './toast';
 export * from './toaster';
+export * from './select';
+export * from './checkbox';
+export * from './alert-dialog';
+export * from './switch';

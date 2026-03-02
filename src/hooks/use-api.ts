@@ -39,6 +39,17 @@ export function useRoles() {
     });
 }
 
+export function useRolePermissions() {
+    return useQuery({
+        queryKey: ['role-permissions'],
+        queryFn: async () => {
+            const resp = await rolesApi.getPermissions();
+            return resp.data;
+        },
+        staleTime: 10 * 60 * 1000,
+    });
+}
+
 export function useAgents() {
     return useQuery({
         queryKey: ['agents-status'],
@@ -46,6 +57,8 @@ export function useAgents() {
             const resp = await agentsApi.getStatus();
             return resp.data as Agent[];
         },
+        refetchInterval: 30 * 1000,
+        refetchIntervalInBackground: false,
     });
 }
 
@@ -59,12 +72,32 @@ export function useDashboardStats() {
     });
 }
 
-export function useAuditLogs() {
+export interface AuditLogFilters {
+    userId?: string;
+    event?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export function useAuditLogs(filters?: AuditLogFilters) {
     return useQuery({
-        queryKey: ['audit-logs'],
+        queryKey: ['audit-logs', filters],
         queryFn: async () => {
-            const resp = await auditLogsApi.getAll();
+            const resp = await auditLogsApi.getAll(filters);
             return resp.data;
         },
+    });
+}
+
+export function useAuditLogEventTypes() {
+    return useQuery({
+        queryKey: ['audit-log-events'],
+        queryFn: async () => {
+            const resp = await auditLogsApi.getEventTypes();
+            return resp.data;
+        },
+        staleTime: 5 * 60 * 1000,
     });
 }
