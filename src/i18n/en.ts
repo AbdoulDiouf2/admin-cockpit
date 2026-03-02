@@ -1,6 +1,6 @@
 export const en = {
   common: {
-    appName: 'InsightSage Admin',
+    appName: 'Cockpit Administration',
     loading: 'Loading...',
     save: 'Save',
     cancel: 'Cancel',

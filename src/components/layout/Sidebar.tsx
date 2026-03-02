@@ -10,7 +10,6 @@ import {
   ScrollText,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
   HeartPulse,
   CreditCard,
 } from 'lucide-react';
@@ -58,15 +57,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         data-testid="sidebar"
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-              <BarChart3 className="h-5 w-5 text-primary" />
-            </div>
+        <div className="flex items-center h-20 px-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-3 overflow-hidden w-full">
+            <img 
+              src="/Logo-cockpit.jpeg" 
+              alt="Cockpit Logo" 
+              className={cn(
+                "object-contain rounded transition-all duration-300",
+                collapsed ? "h-8 w-8" : "h-10 w-auto"
+              )}
+            />
             {!collapsed && (
               <div className="overflow-hidden">
-                <h1 className="font-bold text-sidebar-foreground truncate">InsightSage</h1>
-                <p className="text-xs text-muted-foreground truncate">Admin Cockpit</p>
+                <h1 className="font-bold text-lg text-sidebar-foreground truncate tracking-tight">Cockpit</h1>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-wider truncate opacity-80">Administration</p>
               </div>
             )}
           </div>
