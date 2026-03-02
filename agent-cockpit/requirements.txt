@@ -13,4 +13,4 @@ loguru==0.7.3
 slowapi==0.1.9
 
 # Pour générer l'exécutable Windows
-pyinstaller==6.11.1
+pyinstaller==6.12.0
