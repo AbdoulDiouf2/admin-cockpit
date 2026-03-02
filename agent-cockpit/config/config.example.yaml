@@ -15,7 +15,8 @@ sage:
 
 # Connexion au Backend SaaS InsightSage
 backend:
-  url: "https://api.insightsage.com"
+  # url: "https://api.insightsage.com"
+  url: "http://localhost:3000/api"
   # Token généré lors de l'onboarding
   agent_token: "VOTRE_TOKEN_ICI"
   # Intervalle heartbeat en secondes
