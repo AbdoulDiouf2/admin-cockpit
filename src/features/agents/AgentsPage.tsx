@@ -1,32 +1,59 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw, ShieldOff } from 'lucide-react';
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAgents } from '@/hooks/use-api';
 import { Agent } from '@/types';
 import { GenerateTokenModal } from './GenerateTokenModal';
 import { RegenerateTokenModal } from './RegenerateTokenModal';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { agentsApi } from '@/api';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 
 export function AgentsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [generateOpen, setGenerateOpen] = useState(false);
   const [regenerateAgent, setRegenerateAgent] = useState<Agent | null>(null);
+  const [revokeAgent, setRevokeAgent] = useState<Agent | null>(null);
 
   const { data: agents, isLoading, error, isFetching } = useAgents();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => agentsApi.revokeToken(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents-status'] });
+      toast({
+        title: t('common.success'),
+        description: t('agents.revokeTokenSuccess'),
+      });
+      setRevokeAgent(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.response?.data?.message || t('common.error'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const getStatusColor = (agent: Agent) => {
+    if (agent.isRevoked) return 'text-orange-500 fill-orange-500';
+    switch (agent.status) {
       case 'online': return 'text-green-500 fill-green-500';
       case 'offline': return 'text-gray-400 fill-gray-400';
       case 'error': return 'text-destructive fill-destructive';
@@ -34,8 +61,9 @@ export function AgentsPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
+  const getStatusLabel = (agent: Agent) => {
+    if (agent.isRevoked) return t('agents.revoked');
+    switch (agent.status) {
       case 'online': return t('agents.online');
       case 'offline': return t('agents.offline');
       case 'error': return t('agents.error');
@@ -99,18 +127,16 @@ export function AgentsPage() {
                 <TableBody>
                   {agents?.map((agent) => (
                     <TableRow key={agent.id}>
-                      <TableCell className="font-medium">
-                        <Link 
-                          to={`/agents/${agent.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          {agent.name}
-                        </Link>
-                      </TableCell>
+                      <TableCell className="font-medium">{agent.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Circle className={`h-2 w-2 ${getStatusColor(agent.status)}`} />
-                          <span className="text-sm">{getStatusLabel(agent.status)}</span>
+                          <Circle className={`h-2 w-2 ${getStatusColor(agent)}`} />
+                          <span className="text-sm">{getStatusLabel(agent)}</span>
+                          {agent.isExpiringSoon && !agent.isRevoked && (
+                            <span className="text-xs text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 px-1.5 py-0.5 rounded">
+                              {t('agents.expiringSoon')}
+                            </span>
+                          )}
                         </div>
                         {agent.status === 'error' && agent.lastError && (
                           <p className="text-xs text-destructive mt-1 max-w-[200px] truncate">
@@ -146,6 +172,18 @@ export function AgentsPage() {
                               <RefreshCw className="mr-2 h-4 w-4" />
                               {t('agents.regenerateToken')}
                             </DropdownMenuItem>
+                            {!agent.isRevoked && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setRevokeAgent(agent)}
+                                >
+                                  <ShieldOff className="mr-2 h-4 w-4" />
+                                  {t('agents.revokeToken')}
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -173,6 +211,19 @@ export function AgentsPage() {
           if (!open) setRegenerateAgent(null);
         }}
         agent={regenerateAgent}
+      />
+
+      <ConfirmDialog
+        open={revokeAgent !== null}
+        onOpenChange={(open) => {
+          if (!open) setRevokeAgent(null);
+        }}
+        title={t('agents.revokeTokenConfirm')}
+        description={t('agents.revokeTokenDesc')}
+        onConfirm={() => revokeAgent && revokeMutation.mutate(revokeAgent.id)}
+        isPending={revokeMutation.isPending}
+        confirmLabel={t('agents.revokeToken')}
+        cancelLabel={t('common.cancel')}
       />
     </div>
   );

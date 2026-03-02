@@ -91,11 +91,11 @@ export function OrganizationsPage() {
       ),
     },
     {
-      accessorKey: 'plan',
+      id: 'plan',
       header: 'Plan',
       cell: ({ row }) => {
-        const plan = row.getValue('plan') as string | undefined;
-        return <span className="capitalize text-sm">{plan || '—'}</span>;
+        const label = row.original.subscriptionPlan?.label;
+        return <span className="capitalize text-sm">{label || '—'}</span>;
       },
     },
     {

@@ -33,11 +33,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import type { Organization } from '@/types';
+import { useActivePlans } from '@/hooks/use-api';
 
 const formSchema = z.object({
     name: z.string().min(2, 'Le nom est requis'),
     size: z.string().optional(),
-    plan: z.string().optional(),
+    planId: z.string().optional(),
     sageType: z.string().optional(),
 });
 
@@ -57,10 +58,11 @@ export function EditOrganizationModal({
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const { toast } = useToast();
+    const { data: plans = [] } = useActivePlans();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: { name: '', size: '', plan: '', sageType: '' },
+        defaultValues: { name: '', size: '', planId: '', sageType: '' },
     });
 
     useEffect(() => {
@@ -68,7 +70,7 @@ export function EditOrganizationModal({
             form.reset({
                 name: organization.name,
                 size: organization.size || '',
-                plan: organization.plan || '',
+                planId: organization.planId || '',
                 sageType: organization.sageType || '',
             });
         }
@@ -151,7 +153,7 @@ export function EditOrganizationModal({
 
                             <FormField
                                 control={form.control}
-                                name="plan"
+                                name="planId"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('organizations.plan')}</FormLabel>
@@ -165,9 +167,11 @@ export function EditOrganizationModal({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="starter">Starter</SelectItem>
-                                                <SelectItem value="pro">Pro</SelectItem>
-                                                <SelectItem value="enterprise">Enterprise</SelectItem>
+                                                {plans.map((p) => (
+                                                    <SelectItem key={p.id} value={p.id}>
+                                                        {p.label}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
