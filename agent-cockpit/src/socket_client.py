@@ -58,6 +58,19 @@ class SocketClient:
         logger.warning("❌ Disconnected from InsightSage WebSocket")
         self.is_connected = False
         self.org_id = None
+        await self.log_to_backend("warning", "Agent disconnected from WebSocket")
+
+    async def log_to_backend(self, level: str, message: str):
+        """Send a log message to the backend for centralization"""
+        if self.is_connected:
+            try:
+                await self.sio.emit('agent_log', {
+                    'level': level,
+                    'message': message,
+                    'timestamp': datetime.utcnow().isoformat()
+                }, namespace='/agents')
+            except Exception:
+                pass # Avoid infinite loops or crashing on log failure
 
     async def on_connect_error(self, data):
         logger.error(f"WebSocket connection error: {data}")
@@ -65,6 +78,7 @@ class SocketClient:
     async def on_authenticated(self, data):
         self.org_id = data.get('organizationId')
         logger.info(f"🔐 Authenticated via WebSocket for Org: {self.org_id}")
+        await self.log_to_backend("info", f"Agent authenticated and ready for organization {self.org_id}")
 
     async def on_execute_sql(self, data):
         """Handle SQL execution request from backend"""
@@ -87,10 +101,14 @@ class SocketClient:
             logger.info(f"📤 Sent result for job: {job_id}")
             
         except Exception as e:
-            logger.error(f"❌ Error executing job {job_id}: {str(e)}")
+            error_msg = str(e)
+            logger.error(f"❌ Error executing job {job_id}: {error_msg}")
+            
+            await self.log_to_backend("error", f"SQL execution failed for job {job_id}: {error_msg}")
+            
             await self.sio.emit('sql_result', {
                 'jobId': job_id,
-                'error': str(e)
+                'error': error_msg
             }, namespace='/agents')
 
     async def disconnect(self):
