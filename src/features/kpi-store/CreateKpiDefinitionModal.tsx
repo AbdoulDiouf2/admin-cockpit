@@ -140,7 +140,7 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiUnit')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="€, %, jours" {...field} />
+                      <Input placeholder="FCFA, %, jours" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

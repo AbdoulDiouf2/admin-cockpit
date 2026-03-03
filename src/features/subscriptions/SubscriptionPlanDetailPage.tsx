@@ -57,7 +57,7 @@ export function SubscriptionPlanDetailPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Prix Mensuel</p>
                 <p className="text-lg font-bold">
-                  {plan.priceMonthly != null ? `${plan.priceMonthly} €` : 'Sur devis'}
+                  {plan.priceMonthly != null ? `${plan.priceMonthly.toLocaleString()} FCFA` : 'Sur devis'}
                 </p>
               </div>
               <div>
@@ -120,21 +120,21 @@ export function SubscriptionPlanDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              <FeatureItem 
-                label="NLQ (Natural Language Query)" 
-                enabled={!!plan.hasNlq} 
+              <FeatureItem
+                label="NLQ (Natural Language Query)"
+                enabled={!!plan.hasNlq}
               />
-              <FeatureItem 
-                label="Rapports Avancés" 
-                enabled={!!plan.hasAdvancedReports} 
+              <FeatureItem
+                label="Rapports Avancés"
+                enabled={!!plan.hasAdvancedReports}
               />
-              <FeatureItem 
-                label="Packs KPI Autorisés" 
+              <FeatureItem
+                label="Packs KPI Autorisés"
                 enabled={true}
                 value={plan.allowedKpiPacks?.join(', ') || 'Tous'}
               />
-              <FeatureItem 
-                label="Ordre d'affichage" 
+              <FeatureItem
+                label="Ordre d'affichage"
                 enabled={true}
                 value={plan.sortOrder?.toString() || '0'}
               />

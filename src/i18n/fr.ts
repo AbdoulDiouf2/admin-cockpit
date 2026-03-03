@@ -166,7 +166,7 @@ export const fr = {
     reactivate: 'Réactiver',
     name: 'Identifiant (slug)',
     label: 'Nom affiché',
-    priceMonthly: 'Prix mensuel (€)',
+    priceMonthly: 'Prix mensuel (FCFA)',
     customPricing: 'Sur devis',
     maxUsers: 'Max utilisateurs',
     maxKpis: 'Max KPIs',

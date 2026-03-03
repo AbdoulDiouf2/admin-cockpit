@@ -162,7 +162,7 @@ export const en = {
     reactivate: 'Reactivate',
     name: 'Identifier (slug)',
     label: 'Display name',
-    priceMonthly: 'Monthly price (€)',
+    priceMonthly: 'Monthly price (FCFA)',
     customPricing: 'Custom pricing',
     maxUsers: 'Max users',
     maxKpis: 'Max KPIs',

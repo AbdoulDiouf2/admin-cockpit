@@ -79,7 +79,7 @@ export function SubscriptionPlansPage() {
         const plan = row.original;
         return (
           <div className="flex items-center gap-2">
-            <Link 
+            <Link
               to={`/subscription-plans/${plan.id}`}
               className="font-medium text-primary hover:underline"
             >
@@ -108,7 +108,7 @@ export function SubscriptionPlansPage() {
         const price = row.getValue('priceMonthly') as number | null | undefined;
         return (
           <span className="text-sm">
-            {price != null ? `${price} €/mois` : t('subscriptionPlans.customPricing')}
+            {price != null ? `${price.toLocaleString()} FCFA/mois` : t('subscriptionPlans.customPricing')}
           </span>
         );
       },

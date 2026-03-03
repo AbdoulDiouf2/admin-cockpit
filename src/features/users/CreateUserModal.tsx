@@ -32,15 +32,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Loader2, UserPlus } from 'lucide-react';
 import { useOrganizations, useRoles } from '@/hooks/use-api';
-import { Checkbox } from '@/components/ui/checkbox';
-
 const formSchema = z.object({
     firstName: z.string().min(2, 'Le prénom est requis'),
     lastName: z.string().min(2, 'Le nom est requis'),
     email: z.string().email('Email invalide'),
     password: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères'),
     organizationId: z.string().min(1, "L'organisation est requise"),
-    roleIds: z.array(z.string()).min(1, 'Au moins un rôle est requis'),
+    roleId: z.string().min(1, 'Le rôle est requis'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -59,18 +57,21 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: { 
-            firstName: '', 
-            lastName: '', 
-            email: '', 
-            password: '', 
-            organizationId: '', 
-            roleIds: [] 
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            organizationId: '',
+            roleId: ''
         },
     });
 
     const mutation = useMutation({
-        mutationFn: (values: FormValues) => usersApi.create(values),
+        mutationFn: (values: FormValues) => {
+            const { roleId, ...rest } = values;
+            return usersApi.create({ ...rest, roleIds: [roleId] });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-users'] });
             toast({
@@ -196,40 +197,30 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
                             )}
                         />
 
-                        <div className="space-y-2">
-                            <FormLabel>Rôles</FormLabel>
-                            <div className="flex flex-wrap gap-4 pt-1">
-                                {roles?.map((role) => (
-                                    <FormField
-                                        key={role.id}
-                                        control={form.control}
-                                        name="roleIds"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.includes(role.id)}
-                                                        onCheckedChange={(checked) => {
-                                                            return checked
-                                                                ? field.onChange([...field.value, role.id])
-                                                                : field.onChange(
-                                                                      field.value?.filter(
-                                                                          (value) => value !== role.id
-                                                                      )
-                                                                  );
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
+                        <FormField
+                            control={form.control}
+                            name="roleId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Rôle</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sélectionner un rôle" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {roles?.map((role) => (
+                                                <SelectItem key={role.id} value={role.id}>
                                                     {role.name}
-                                                </FormLabel>
-                                            </FormItem>
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                            <FormMessage />
-                        </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <DialogFooter className="pt-4">
                             <Button
