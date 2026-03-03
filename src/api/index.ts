@@ -14,6 +14,7 @@ import type {
   WidgetTemplate,
   Invitation,
   KpiPack,
+  AgentLogsResponse,
 } from '@/types';
 
 // Auth
@@ -132,6 +133,9 @@ export const agentsApi = {
 
   testConnection: (id: string) =>
     api.post(`/agents/${id}/test-connection`),
+
+  getLogs: (id: string, params?: { page?: number; limit?: number }) =>
+    api.get<AgentLogsResponse>(`/agents/${id}/logs`, { params }),
 };
 
 // Subscription Plans

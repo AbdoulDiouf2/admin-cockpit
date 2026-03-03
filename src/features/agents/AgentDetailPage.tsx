@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAgent } from '@/hooks/use-api';
+import { useAgent, useAgentLogs } from '@/hooks/use-api';
 import { useMutation } from '@tanstack/react-query';
 import { agentsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,9 @@ import {
   Server,
   Key,
   Zap,
-  Loader2
+  Loader2,
+  FileText,
+  Activity
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { format } from 'date-fns';
@@ -27,9 +29,12 @@ export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { data: agent, isLoading, error } = useAgent(id!);
+  const { data: agent, isLoading: isAgentLoading, error } = useAgent(id!);
+  const { data: logData, isLoading: isLogsLoading } = useAgentLogs(id!);
   const { toast } = useToast();
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
+
+  const isLoading = isAgentLoading; // Keep isLoading for the initial full-screen loading
 
   const testMutation = useMutation({
     mutationFn: () => agentsApi.testConnection(id!),
@@ -255,6 +260,77 @@ export function AgentDetailPage() {
                         <AlertCircle className="h-3.5 w-3.5" /> Expire bientôt ({agent.daysUntilExpiry} jours)
                     </div>
                  )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Logs Card */}
+        <Card className="md:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Journal d'activité (Logs)
+              </CardTitle>
+              <CardDescription>
+                Les 50 derniers événements remontés par l'agent
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded">
+                <Activity className="h-3 w-3" />
+                Live Update
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border border-muted bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div className="max-h-[400px] overflow-y-auto font-mono text-xs">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-muted z-10">
+                    <tr className="text-left text-muted-foreground border-b border-muted">
+                      <th className="p-2 font-bold w-40">Timestamp</th>
+                      <th className="p-2 font-bold w-20">Niveau</th>
+                      <th className="p-2 font-bold">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLogsLoading ? (
+                      <tr>
+                        <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                          Chargement des logs...
+                        </td>
+                      </tr>
+                    ) : !logData?.logs?.length ? (
+                      <tr>
+                        <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                          Aucun log disponible pour cet agent.
+                        </td>
+                      </tr>
+                    ) : (
+                      logData.logs.map((log) => (
+                        <tr key={log.id} className="border-b border-muted/50 hover:bg-muted/30 transition-colors">
+                          <td className="p-2 text-muted-foreground whitespace-nowrap">
+                            {format(new Date(log.timestamp), 'dd/MM HH:mm:ss')}
+                          </td>
+                          <td className="p-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              log.level === 'error' ? 'bg-red-500/20 text-red-500' :
+                              log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
+                              'bg-green-500/20 text-green-500'
+                            }`}>
+                              {log.level}
+                            </span>
+                          </td>
+                          <td className="p-2 break-all text-foreground/90 leading-relaxed font-sans">
+                            {log.message}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </CardContent>

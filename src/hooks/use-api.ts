@@ -110,6 +110,18 @@ export function useAgent(id: string) {
     });
 }
 
+export function useAgentLogs(id: string, page = 1, limit = 50) {
+    return useQuery({
+        queryKey: ['agent-logs', id, page, limit],
+        queryFn: async () => {
+            const resp = await agentsApi.getLogs(id, { page, limit });
+            return resp.data;
+        },
+        enabled: !!id,
+        refetchInterval: 10 * 1000, // Rafraîchir toutes les 10s pour le "live" feeling
+    });
+}
+
 export function useAllInvitations() {
     return useQuery({
         queryKey: ['admin-invitations'],

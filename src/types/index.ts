@@ -130,6 +130,25 @@ export interface Agent {
   createdAt: string;
 }
 
+export interface AgentLog {
+  id: string;
+  level: string; // 'info' | 'warning' | 'error' | 'debug'
+  message: string;
+  timestamp: string;
+  organizationId: string;
+  agentId: string;
+}
+
+export interface AgentLogsResponse {
+  logs: AgentLog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
 // Audit Log types
 export interface AuditLog {
   id: string;
