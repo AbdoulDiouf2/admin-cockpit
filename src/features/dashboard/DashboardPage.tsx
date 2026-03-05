@@ -1,10 +1,83 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, Cpu, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  Building2,
+  Users,
+  Cpu,
+  AlertTriangle,
+  Loader2,
+  Store,
+  Database,
+  Layers,
+  Zap,
+  Search,
+  History,
+  Info,
+  Shield,
+  Key,
+  LogOut,
+  UserPlus,
+  RefreshCw,
+  Trash2
+} from 'lucide-react';
 import { useDashboardStats } from '@/hooks/use-api';
-import { ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar
+} from 'recharts';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'];
+
+const EVENT_META: Record<string, { label: string; icon: any; color: string }> = {
+  user_login: { label: 'Connexion', icon: Zap, color: 'text-blue-500' },
+  user_logout: { label: 'Déconnexion', icon: LogOut, color: 'text-slate-500' },
+  user_created: { label: 'Utilisateur créé', icon: UserPlus, color: 'text-green-500' },
+  user_updated: { label: 'Utilisateur modifié', icon: RefreshCw, color: 'text-amber-500' },
+  user_deleted: { label: 'Utilisateur supprimé', icon: Trash2, color: 'text-red-500' },
+  user_invited: { label: 'Invitation envoyée', icon: Shield, color: 'text-purple-500' },
+  role_created: { label: 'Rôle créé', icon: Shield, color: 'text-green-500' },
+  role_updated: { label: 'Rôle modifié', icon: Shield, color: 'text-amber-500' },
+  role_deleted: { label: 'Rôle supprimé', icon: Shield, color: 'text-red-500' },
+  organization_created: { label: 'Organisation créée', icon: Building2, color: 'text-green-500' },
+  organization_updated: { label: 'Organisation modifiée', icon: Building2, color: 'text-amber-500' },
+  agent_registered: { label: 'Agent connecté', icon: Cpu, color: 'text-blue-500' },
+  agent_token_generated: { label: 'Token généré', icon: Key, color: 'text-indigo-500' },
+  agent_token_regenerated: { label: 'Token régénéré', icon: RefreshCw, color: 'text-orange-500' },
+  agent_error: { label: 'Erreur agent', icon: AlertTriangle, color: 'text-red-500' },
+  password_reset_requested: { label: 'Reset MDP demandé', icon: Key, color: 'text-orange-500' },
+  password_reset_completed: { label: 'MDP réinitialisé', icon: Shield, color: 'text-green-500' },
+};
+
+function formatPayload(payload: any): string {
+  if (!payload) return '';
+  if (typeof payload === 'string') return payload;
+  if (payload.name) return payload.name;
+  if (payload.organizationName) return payload.organizationName;
+  if (payload.email) return payload.email;
+  if (payload.label) return payload.label;
+  if (payload.firstName || payload.lastName) {
+    return `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
+  }
+  return '';
+}
 
 export function DashboardPage() {
+
   const { t } = useTranslation();
   const { data: statsData, isLoading, error } = useDashboardStats();
 
@@ -24,81 +97,70 @@ export function DashboardPage() {
     );
   }
 
-  const stats = [
+  const mainStats = [
     {
       label: t('dashboard.totalOrganizations'),
-      value: statsData?.organizations?.value?.toString() || '0',
+      value: statsData?.organizations?.value || 0,
       icon: Building2,
       trend: statsData?.organizations?.trend || '+0',
-      color: 'text-blue-500'
+      color: 'text-blue-500',
+      bg: 'bg-blue-500/10'
     },
     {
       label: t('dashboard.totalUsers'),
-      value: statsData?.users?.value?.toString() || '0',
+      value: statsData?.users?.value || 0,
       icon: Users,
       trend: statsData?.users?.trend || '+0',
-      color: 'text-green-500'
+      color: 'text-green-500',
+      bg: 'bg-green-500/10'
     },
     {
       label: t('dashboard.activeAgents'),
-      value: statsData?.activeAgents?.value?.toString() || '0',
+      value: statsData?.activeAgents?.value || 0,
       icon: Cpu,
       trend: statsData?.activeAgents?.trend || '+0',
-      color: 'text-emerald-500'
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10'
     },
     {
       label: t('dashboard.errorAgents'),
-      value: statsData?.errorAgents?.value?.toString() || '0',
+      value: statsData?.errorAgents?.value || 0,
       icon: AlertTriangle,
       trend: statsData?.errorAgents?.trend || '0',
-      color: 'text-red-500'
+      color: 'text-red-500',
+      bg: 'bg-red-500/10'
     },
   ];
 
-  // Fake data pour les graphiques si l'API ne renvoie rien pour ça
-  const activityData = statsData?.recentActivity || [
-    { date: '01/03', users: 12, agents: 5 },
-    { date: '02/03', users: 19, agents: 8 },
-    { date: '03/03', users: 15, agents: 7 },
-    { date: '04/03', users: 22, agents: 10 },
-    { date: '05/03', users: 28, agents: 12 },
-    { date: '06/03', users: 24, agents: 9 },
-    { date: '07/03', users: 32, agents: 14 },
-  ];
-
-  const agentsStatusData = statsData?.agentsDistribution || [
-    { name: 'Online', value: statsData?.activeAgents?.value || 45, color: '#22c55e' }, // emerald-500
-    { name: 'Offline', value: 12, color: '#94a3b8' }, // slate-400
-    { name: 'Error', value: statsData?.errorAgents?.value || 3, color: '#ef4444' }, // red-500
-  ];
-
   return (
-    <div className="space-y-6" data-testid="dashboard-page">
+    <div className="space-y-6 pb-10" data-testid="dashboard-page">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{t('dashboard.title')}</h1>
         <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Main Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
+        {mainStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} data-testid={`stat-card-${index}`}>
+            <Card key={index} className="overflow-hidden border-none shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   {stat.label}
                 </CardTitle>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
+                <div className={`p-2 rounded-xl ${stat.bg}`}>
+                  <Icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className={stat.trend.startsWith('+') ? 'text-green-500' : stat.trend === '0' || stat.trend === '+0' ? 'text-muted-foreground' : 'text-red-500'}>
+                <div className="text-4xl font-bold tracking-tight">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <span className={`font-bold ${stat.trend.startsWith('+') ? 'text-green-500' : stat.trend === '0' || stat.trend === '+0' ? 'text-muted-foreground' : 'text-red-500'}`}>
                     {stat.trend}
                   </span>
-                  {' '}{t('dashboard.last30Days')}
+                  {t('dashboard.last30Days')}
                 </p>
               </CardContent>
             </Card>
@@ -106,37 +168,84 @@ export function DashboardPage() {
         })}
       </div>
 
-      {/* Charts row */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card data-testid="recent-activity-card">
+      <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4">
+        {/* KPI & NLQ Store Inventory */}
+        <Card className="md:col-span-1 lg:col-span-1 bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Store className="h-5 w-5 text-primary" />
+              Inventaire Store
+            </CardTitle>
+            <CardDescription>Contenu global du catalogue</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium">KPIs</span>
+                </div>
+                <Badge variant="secondary" className="font-bold">{statsData?.inventory?.kpis || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-emerald-500" />
+                  <span className="text-sm font-medium">Packs</span>
+                </div>
+                <Badge variant="secondary" className="font-bold">{statsData?.inventory?.packs || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm font-medium">Widgets</span>
+                </div>
+                <Badge variant="secondary" className="font-bold">{statsData?.inventory?.widgets || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-medium">NLQ Intents</span>
+                </div>
+                <Badge variant="secondary" className="font-bold">{statsData?.inventory?.intents || 0}</Badge>
+              </div>
+            </div>
+            <div className="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 px-1">
+              <Info className="h-3 w-3" />
+              Total de {statsData?.inventory?.nlqTemplates || 0} templates SQL configurés.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Activity Chart */}
+        <Card className="md:col-span-2 lg:col-span-3 overflow-hidden">
           <CardHeader>
             <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
             <CardDescription>{t('dashboard.last30Days')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full mt-4">
+            <div className="h-[320px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={activityData}
+                  data={statsData?.recentActivity || []}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
                     <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorAgents" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" tickLine={false} axisLine={false} />
                   <YAxis className="text-xs" tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
-                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
+                  <Legend verticalAlign="top" align="right" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
                   <Area
                     type="monotone"
                     name="Nouveaux utilisateurs"
@@ -144,7 +253,7 @@ export function DashboardPage() {
                     stroke="#3b82f6"
                     fillOpacity={1}
                     fill="url(#colorUsers)"
-                    strokeWidth={2}
+                    strokeWidth={3}
                   />
                   <Area
                     type="monotone"
@@ -153,44 +262,98 @@ export function DashboardPage() {
                     stroke="#10b981"
                     fillOpacity={1}
                     fill="url(#colorAgents)"
-                    strokeWidth={2}
+                    strokeWidth={3}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card data-testid="agents-status-card">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Plans Distribution */}
+        <Card className="lg:col-span-1 shadow-sm">
           <CardHeader>
-            <CardTitle>{t('dashboard.agentsStatus')}</CardTitle>
-            <CardDescription>Répartition des statuts actuels</CardDescription>
+            <CardTitle>Répartition des Plans</CardTitle>
+            <CardDescription>Par nombre d'organisations</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full flex items-center justify-center mt-4">
+            <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={agentsStatusData}
+                    data={statsData?.plansDistribution || []}
                     cx="50%"
                     cy="50%"
-                    innerRadius={80}
-                    outerRadius={110}
-                    paddingAngle={2}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
                     dataKey="value"
                   >
-                    {agentsStatusData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    {statsData?.plansDistribution?.map((_: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>
+                  <Tooltip />
+                  <Legend iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Audit Logs */}
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                Activité Récente
+              </CardTitle>
+              <CardDescription>Dernières actions administratives</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[280px] pr-4">
+              <div className="space-y-4">
+                {statsData?.recentAuditLogs?.map((log: any) => {
+                  const meta = EVENT_META[log.event] || { label: log.event, icon: History, color: 'text-primary' };
+                  const Icon = meta.icon;
+                  const details = formatPayload(log.payload);
+
+                  return (
+                    <div key={log.id} className="flex items-start gap-4 p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all">
+                      <div className={`w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0`}>
+                        <Icon className={`h-5 w-5 ${meta.color}`} />
+                      </div>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm truncate">
+                            {log.user ? `${log.user.firstName} ${log.user.lastName}` : 'Système'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                            {format(new Date(log.createdAt), 'dd MMM HH:mm', { locale: fr })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold py-0 h-4 shrink-0 transition-colors group-hover:bg-primary/5">
+                            {meta.label}
+                          </Badge>
+                          <span className="truncate">{details || (log.event.includes('login') ? 'Session démarrée' : 'Action effectuée')}</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(!statsData?.recentAuditLogs || statsData?.recentAuditLogs.length === 0) && (
+                  <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
+                    <History className="h-8 w-8 mb-2 opacity-20" />
+                    <p>Aucune activité récente</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>

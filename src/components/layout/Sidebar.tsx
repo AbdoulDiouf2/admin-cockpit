@@ -14,6 +14,7 @@ import {
   CreditCard,
   BarChart3,
   Calendar,
+  Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +33,7 @@ const navItems = [
   { path: '/subscription-plans', icon: CreditCard, labelKey: 'nav.subscriptionPlans' },
   { path: '/client-plans', icon: CreditCard, labelKey: 'nav.clientPlans' },
   { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
+  { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
   { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
   { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },

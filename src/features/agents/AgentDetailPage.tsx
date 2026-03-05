@@ -7,13 +7,13 @@ import { agentsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  ArrowLeft, 
-  Globe, 
-  Clock, 
-  Database, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  ArrowLeft,
+  Globe,
+  Clock,
+  Database,
+  AlertCircle,
+  CheckCircle2,
   Server,
   Key,
   Zap,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RegenerateTokenModal } from './RegenerateTokenModal';
 
 export function AgentDetailPage() {
@@ -47,7 +47,7 @@ export function AgentDetailPage() {
       if (newLog.agentId === id) {
         queryClient.setQueryData(['agent-logs', id, 1, 50], (oldData: any) => {
           if (!oldData) return { logs: [newLog], pagination: { total: 1, pages: 1, page: 1, limit: 50 } };
-          
+
           return {
             ...oldData,
             logs: [newLog, ...oldData.logs].slice(0, 50), // Keep latest 50
@@ -140,9 +140,9 @@ export function AgentDetailPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => testMutation.mutate()} 
+          <Button
+            variant="outline"
+            onClick={() => testMutation.mutate()}
             disabled={testMutation.isPending || !agent.isSocketConnected}
           >
             {testMutation.isPending ? (
@@ -201,14 +201,14 @@ export function AgentDetailPage() {
                   <div>
                     <p className="text-sm font-bold">Tunnel Command & Control</p>
                     <p className="text-xs text-muted-foreground">
-                      {agent.isSocketConnected 
-                        ? 'Le canal WebSockets est actif. Les requêtes NLQ seront traitées instantanément.' 
+                      {agent.isSocketConnected
+                        ? 'Le canal WebSockets est actif. Les requêtes NLQ seront traitées instantanément.'
                         : 'L\'agent utilise le mode polling (30s). Le temps réel est indisponible.'}
                     </p>
                   </div>
                 </div>
                 {agent.isSocketConnected && (
-                   <span className="text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase">Optimisé</span>
+                  <span className="text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase">Optimisé</span>
                 )}
               </div>
             </div>
@@ -238,7 +238,7 @@ export function AgentDetailPage() {
               <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Lignes synchronisées</p>
               <p className="text-2xl font-black">{agent.rowsSynced?.toLocaleString() || 0}</p>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground flex items-center gap-1.5">
@@ -288,11 +288,11 @@ export function AgentDetailPage() {
                 </div>
               </div>
               <div className="flex items-center">
-                 {agent.isExpiringSoon && !agent.isRevoked && (
-                    <div className="text-xs text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-                        <AlertCircle className="h-3.5 w-3.5" /> Expire bientôt ({agent.daysUntilExpiry} jours)
-                    </div>
-                 )}
+                {agent.isExpiringSoon && !agent.isRevoked && (
+                  <div className="text-xs text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" /> Expire bientôt ({agent.daysUntilExpiry} jours)
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -348,11 +348,10 @@ export function AgentDetailPage() {
                             {format(new Date(log.timestamp), 'dd/MM HH:mm:ss')}
                           </td>
                           <td className="p-2">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              log.level === 'error' ? 'bg-red-500/20 text-red-500' :
-                              log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
-                              'bg-green-500/20 text-green-500'
-                            }`}>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${log.level === 'error' ? 'bg-red-500/20 text-red-500' :
+                                log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
+                                  'bg-green-500/20 text-green-500'
+                              }`}>
                               {log.level}
                             </span>
                           </td>
@@ -370,7 +369,7 @@ export function AgentDetailPage() {
         </Card>
       </div>
 
-      <RegenerateTokenModal 
+      <RegenerateTokenModal
         open={isRegenerateOpen}
         onOpenChange={setIsRegenerateOpen}
         agent={agent}
@@ -385,7 +384,7 @@ function Badge({ children, variant = 'default', className = '' }: { children: Re
     destructive: 'bg-destructive text-destructive-foreground',
     secondary: 'bg-secondary text-secondary-foreground'
   };
-  
+
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${variants[variant]} ${className}`}>
       {children}

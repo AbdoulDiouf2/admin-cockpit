@@ -22,6 +22,11 @@ import { SubscriptionPlanDetailPage } from './features/subscriptions/Subscriptio
 import { ClientPlansPage } from '@/features/subscriptions/ClientPlansPage';
 import { KpiStorePage } from './features/kpi-store/KpiStorePage';
 import { WidgetTemplateDetailPage } from './features/kpi-store/WidgetTemplateDetailPage';
+import { KpiDefinitionDetailPage } from './features/kpi-store/KpiDefinitionDetailPage';
+import { KpiPackDetailPage } from './features/kpi-store/KpiPackDetailPage';
+import { NlqStorePage } from './features/nlq/NlqStorePage';
+import { NlqIntentDetailPage } from './features/nlq/NlqIntentDetailPage';
+import { NlqTemplateDetailPage } from './features/nlq/NlqTemplateDetailPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,6 +74,11 @@ export default function App() {
                 <Route path="/client-plans" element={<ClientPlansPage />} />
                 <Route path="/kpi-store" element={<KpiStorePage />} />
                 <Route path="/kpi-store/widget-templates/:id" element={<WidgetTemplateDetailPage />} />
+                <Route path="/kpi-store/definitions/:id" element={<KpiDefinitionDetailPage />} />
+                <Route path="/kpi-store/packs/:id" element={<KpiPackDetailPage />} />
+                <Route path="/nlq-store" element={<NlqStorePage />} />
+                <Route path="/nlq-store/intents/:id" element={<NlqIntentDetailPage />} />
+                <Route path="/nlq-store/templates/:id" element={<NlqTemplateDetailPage />} />
               </Routes>
             </MainLayout>
           </ProtectedRoute>

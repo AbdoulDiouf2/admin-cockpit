@@ -54,12 +54,13 @@ export function WidgetTemplatesTab() {
       accessorKey: 'name',
       header: t('kpiStore.templateName'),
       cell: ({ row }) => (
-        <button
-          className="font-medium text-left hover:text-primary hover:underline transition-colors"
+        <Button
+          variant="link"
+          className="p-0 h-auto font-medium text-primary hover:underline justify-start"
           onClick={() => navigate(`/kpi-store/widget-templates/${row.original.id}`)}
         >
           {row.getValue('name')}
-        </button>
+        </Button>
       ),
     },
     {

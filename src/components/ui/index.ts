@@ -18,3 +18,4 @@ export * from './alert-dialog';
 export * from './switch';
 export * from './tabs';
 export * from './progress';
+export * from './scroll-area';

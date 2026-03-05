@@ -18,11 +18,13 @@ import { kpiPacksApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { useKpiPacks } from '@/hooks/use-api';
 import type { KpiPack } from '@/types';
+import { useNavigate } from 'react-router-dom';
 import { CreateKpiPackModal } from './CreateKpiPackModal';
 import { EditKpiPackModal } from './EditKpiPackModal';
 
 export function KpiPacksTab() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -51,7 +53,15 @@ export function KpiPacksTab() {
     {
       accessorKey: 'label',
       header: t('kpiStore.packLabel'),
-      cell: ({ row }) => <span className="font-medium">{row.getValue('label')}</span>,
+      cell: ({ row }) => (
+        <Button
+          variant="link"
+          className="p-0 h-auto font-medium text-primary hover:underline justify-start"
+          onClick={() => navigate(`/kpi-store/packs/${row.original.id}`)}
+        >
+          {row.getValue('label')}
+        </Button>
+      ),
     },
     {
       accessorKey: 'name',
@@ -112,6 +122,9 @@ export function KpiPacksTab() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate(`/kpi-store/packs/${pack.id}`)}>
+                  Voir les détails
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setEditPack(pack)}>
                   {t('common.edit')}
                 </DropdownMenuItem>

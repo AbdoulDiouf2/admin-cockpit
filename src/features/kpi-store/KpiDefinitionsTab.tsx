@@ -18,11 +18,13 @@ import { kpiDefinitionsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { useKpiDefinitions } from '@/hooks/use-api';
 import type { KpiDefinition } from '@/types';
+import { useNavigate } from 'react-router-dom';
 import { CreateKpiDefinitionModal } from './CreateKpiDefinitionModal';
 import { EditKpiDefinitionModal } from './EditKpiDefinitionModal';
 
 export function KpiDefinitionsTab() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -58,7 +60,15 @@ export function KpiDefinitionsTab() {
     {
       accessorKey: 'name',
       header: t('kpiStore.kpiName'),
-      cell: ({ row }) => <span className="font-medium">{row.getValue('name')}</span>,
+      cell: ({ row }) => (
+        <Button
+          variant="link"
+          className="p-0 h-auto font-medium text-primary hover:underline justify-start"
+          onClick={() => navigate(`/kpi-store/definitions/${row.original.id}`)}
+        >
+          {row.getValue('name')}
+        </Button>
+      ),
     },
     {
       accessorKey: 'unit',
@@ -112,6 +122,9 @@ export function KpiDefinitionsTab() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate(`/kpi-store/definitions/${kpi.id}`)}>
+                  Voir les détails
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setEditKpi(kpi)}>
                   {t('common.edit')}
                 </DropdownMenuItem>

@@ -10,6 +10,7 @@ import {
     kpiDefinitionsApi,
     widgetTemplatesApi,
     kpiPacksApi,
+    nlqApi,
 } from '@/api';
 import { Agent } from '@/types';
 
@@ -207,6 +208,17 @@ export function useKpiDefinitions() {
     });
 }
 
+export function useKpiDefinition(id: string) {
+    return useQuery({
+        queryKey: ['kpi-definitions', id],
+        queryFn: async () => {
+            const resp = await kpiDefinitionsApi.getById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
 export function useWidgetTemplates() {
     return useQuery({
         queryKey: ['widget-templates'],
@@ -240,6 +252,17 @@ export function useKpiPacks() {
     });
 }
 
+export function useKpiPack(id: string) {
+    return useQuery({
+        queryKey: ['kpi-packs', id],
+        queryFn: async () => {
+            const resp = await kpiPacksApi.getById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
 // Plans actifs (public — pour les modals)
 export function useActivePlans() {
     return useQuery({
@@ -249,5 +272,27 @@ export function useActivePlans() {
             return resp.data;
         },
         staleTime: 10 * 60 * 1000,
+    });
+}
+
+export function useNlqIntent(id: string) {
+    return useQuery({
+        queryKey: ['nlq-intents', id],
+        queryFn: async () => {
+            const resp = await nlqApi.getIntentById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
+export function useNlqTemplate(id: string) {
+    return useQuery({
+        queryKey: ['nlq-templates', id],
+        queryFn: async () => {
+            const resp = await nlqApi.getTemplateById(id);
+            return resp.data;
+        },
+        enabled: !!id,
     });
 }

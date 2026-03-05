@@ -167,7 +167,7 @@ export function CreateKpiPackModal({ open, onOpenChange }: Props) {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t('kpiStore.packKpis')}</FormLabel>
-                  <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
+                  <div className="grid grid-cols-2 gap-2 rounded-md border p-3 max-h-[300px] overflow-y-auto">
                     {activeKpis.map((kpi) => (
                       <div key={kpi.key} className="flex items-center gap-2">
                         <Checkbox

@@ -166,6 +166,9 @@ export const kpiDefinitionsApi = {
   getAll: () =>
     api.get<KpiDefinition[]>('/admin/kpi-definitions'),
 
+  getById: (id: string) =>
+    api.get<KpiDefinition>(`/admin/kpi-definitions/${id}`),
+
   create: (data: Omit<KpiDefinition, 'id' | 'isActive' | 'createdAt'>) =>
     api.post<KpiDefinition>('/admin/kpi-definitions', data),
 
@@ -199,6 +202,9 @@ export const kpiPacksApi = {
   getAll: () =>
     api.get<KpiPack[]>('/admin/kpi-packs'),
 
+  getById: (id: string) =>
+    api.get<KpiPack>(`/admin/kpi-packs/${id}`),
+
   create: (data: Omit<KpiPack, 'id' | 'isActive' | 'createdAt'>) =>
     api.post<KpiPack>('/admin/kpi-packs', data),
 
@@ -231,4 +237,19 @@ export const healthApi = {
 
   checkDb: () =>
     api.get('/health/db'),
+};
+
+// NLQ Store
+export const nlqApi = {
+  getAllIntents: () =>
+    api.get<any[]>('/admin/nlq-intents'),
+
+  getAllTemplates: () =>
+    api.get<any[]>('/admin/nlq-templates'),
+
+  getIntentById: (id: string) =>
+    api.get<any>(`/admin/nlq-intents/${id}`),
+
+  getTemplateById: (id: string) =>
+    api.get<any>(`/admin/nlq-templates/${id}`),
 };
