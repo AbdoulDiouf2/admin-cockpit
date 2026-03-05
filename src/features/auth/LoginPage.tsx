@@ -12,7 +12,7 @@ export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -50,22 +50,23 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex bg-background overflow-hidden">
       {/* Left side: Branding & Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-muted/30">
-        {/* Background Decorative Image */}
-        <div 
-          className="absolute inset-0 z-0 opacity-40 bg-cover bg-center mix-blend-overlay"
-          style={{ backgroundImage: 'url("/login-bg.png")' }}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-background">
+        {/* Background Decorative Image - Dynamic light/dark */}
+        <div
+          className="absolute inset-0 z-0 opacity-70 dark:opacity-60 bg-cover bg-center dark:mix-blend-overlay login-bg-dynamic"
         />
-        <div className="absolute inset-0 z-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
-        
+        {/* Horizontal gradient to blend with the right side */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent to-background opacity-100" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60 dark:opacity-80" />
+
         {/* Animated Background Elements */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <img 
-            src="/Logo-cockpit.jpeg" 
-            alt="Cockpit Logo" 
+          <img
+            src="/Logo-cockpit.jpeg"
+            alt="Cockpit Logo"
             className="h-12 w-auto object-contain rounded-md shadow-lg border border-white/10"
           />
           <div>
@@ -79,10 +80,10 @@ export function LoginPage() {
             Pilotez votre <span className="text-primary italic">donnée</span> en toute simplicité.
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Une interface intuitive et puissante pour centraliser la gestion de vos organisations, 
+            Une interface intuitive et puissante pour centraliser la gestion de vos organisations,
             utilisateurs et agents Sage. Prenez de la hauteur sur votre business.
           </p>
-          
+
           <div className="flex items-center gap-8 pt-4">
             <div className="space-y-1">
               <p className="text-2xl font-bold text-foreground">99.9%</p>
@@ -105,9 +106,9 @@ export function LoginPage() {
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 bg-background relative">
         {/* Mobile Logo Only */}
         <div className="lg:hidden flex flex-col items-center gap-4 mb-10 text-center">
-          <img 
-            src="/Logo-cockpit.jpeg" 
-            alt="Cockpit Logo" 
+          <img
+            src="/Logo-cockpit.jpeg"
+            alt="Cockpit Logo"
             className="h-16 w-auto object-contain rounded-lg shadow-md"
           />
           <div>
@@ -124,7 +125,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div 
+              <div
                 className="flex items-center gap-3 p-4 text-sm text-destructive bg-destructive/5 rounded-xl border border-destructive/10 animate-in fade-in zoom-in duration-200"
                 data-testid="login-error"
               >

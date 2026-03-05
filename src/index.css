@@ -72,6 +72,22 @@ html {
   }
 }
 
+.login-bg-dynamic {
+  background-image: url("/login-bg-light.png");
+}
+
+.dark .login-bg-dynamic {
+  background-image: url("/login-bg.png");
+}
+
+.logo-invert-dark {
+  filter: brightness(0) invert(1);
+}
+
+.dark .logo-invert-dark {
+  filter: none;
+}
+
 /* Custom scrollbar for dark mode */
 .dark ::-webkit-scrollbar {
   width: 8px;
