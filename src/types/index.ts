@@ -67,8 +67,7 @@ export interface SubscriptionPlan {
   allowedKpiPacks?: string[];
   hasNlq?: boolean;
   hasAdvancedReports?: boolean;
-  stripeProductId?: string;
-  stripePriceId?: string;
+  fwPlanId?: string;
   sortOrder?: number;
   isActive?: boolean;
   _count?: { organizations: number };
@@ -236,7 +235,7 @@ export type BillingStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | '
 export interface BillingCustomer {
   id: string;
   organizationId: string;
-  stripeCustomerId: string;
+  fwCustomerId?: string;
   email: string;
   createdAt: string;
   updatedAt: string;
@@ -246,10 +245,10 @@ export interface BillingInvoice {
   id: string;
   organizationId: string;
   subscriptionId: string;
-  stripeInvoiceId: string;
+  fwTransactionId: string;
   amountPaid: number;   // en XOF (entier)
   currency: string;     // 'xof'
-  status: string;       // 'paid' | 'open' | 'void'
+  status: string;       // 'paid' | 'open' | 'failed'
   pdfUrl?: string;
   hostedUrl?: string;
   paidAt?: string;
@@ -259,7 +258,7 @@ export interface BillingInvoice {
 export interface BillingSubscription {
   id: string;
   organizationId: string;
-  stripeSubscriptionId: string;
+  fwSubscriptionId?: string;
   planId: string;
   status: BillingStatus;
   currentPeriodStart: string;

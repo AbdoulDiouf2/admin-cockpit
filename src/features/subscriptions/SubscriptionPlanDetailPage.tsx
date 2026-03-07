@@ -142,29 +142,23 @@ export function SubscriptionPlanDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Stripe Config */}
-        {(plan.stripeProductId || plan.stripePriceId) && (
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Configuration Stripe
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Product ID</p>
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{plan.stripeProductId || 'N/A'}</code>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Price ID</p>
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{plan.stripePriceId || 'N/A'}</code>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Flutterwave Config */}
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Configuration Flutterwave
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Payment Plan ID</p>
+              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                {plan.fwPlanId || <span className="text-muted-foreground italic">Non configuré</span>}
+              </code>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

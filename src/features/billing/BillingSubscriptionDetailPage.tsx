@@ -126,7 +126,7 @@ export function BillingSubscriptionDetailPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Client Stripe</CardTitle>
+                <CardTitle className="text-base">Client Flutterwave</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {subscription.customer ? (
@@ -135,14 +135,18 @@ export function BillingSubscriptionDetailPage() {
                       <span className="text-muted-foreground">Email</span>
                       <span>{subscription.customer.email}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{t('billingAdmin.stripeId')} (customer)</span>
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">{subscription.customer.stripeCustomerId}</code>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{t('billingAdmin.stripeId')} (subscription)</span>
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">{subscription.stripeSubscriptionId}</code>
-                    </div>
+                    {subscription.customer.fwCustomerId && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">FW Customer ID</span>
+                        <code className="text-xs bg-muted px-1 py-0.5 rounded">{subscription.customer.fwCustomerId}</code>
+                      </div>
+                    )}
+                    {subscription.fwSubscriptionId && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">FW Subscription ID</span>
+                        <code className="text-xs bg-muted px-1 py-0.5 rounded">{subscription.fwSubscriptionId}</code>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <span className="text-muted-foreground">—</span>
