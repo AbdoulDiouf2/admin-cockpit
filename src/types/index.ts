@@ -13,6 +13,39 @@ export interface User {
   updatedAt: string;
 }
 
+export interface Widget {
+  id: string;
+  name: string;
+  type: string;
+  config: any;
+  exposure?: string;
+  vizType?: string;
+  position: any;
+  isActive: boolean;
+  dashboardId?: string;
+  organizationId: string;
+  userId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Dashboard {
+  id: string;
+  name: string;
+  layout: any;
+  isDefault: boolean;
+  organizationId: string;
+  organization?: Organization;
+  userId: string;
+  user?: User;
+  widgets?: Widget[];
+  _count?: {
+    widgets: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserRole {
   id: string;
   userId: string;

@@ -32,6 +32,7 @@ const navItems = [
   { path: '/roles', icon: Shield, labelKey: 'nav.roles' },
   { path: '/subscription-plans', icon: CreditCard, labelKey: 'nav.subscriptionPlans' },
   { path: '/client-plans', icon: CreditCard, labelKey: 'nav.clientPlans' },
+  { path: '/dashboards', icon: LayoutDashboard, labelKey: 'nav.clientDashboards' },
   { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
   { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },

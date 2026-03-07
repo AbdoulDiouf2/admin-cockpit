@@ -18,7 +18,10 @@ import { InvitationsPage } from './features/invitations/InvitationsPage';
 import { HealthPage } from './features/health/HealthPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { SubscriptionPlansPage } from './features/subscriptions/SubscriptionPlansPage';
+import { DashboardsPage } from './features/dashboards/DashboardsPage';
+import { DashboardDetailPage } from './features/dashboards/DashboardDetailPage';
 import { SubscriptionPlanDetailPage } from './features/subscriptions/SubscriptionPlanDetailPage';
+
 import { ClientPlansPage } from '@/features/subscriptions/ClientPlansPage';
 import { KpiStorePage } from './features/kpi-store/KpiStorePage';
 import { WidgetTemplateDetailPage } from './features/kpi-store/WidgetTemplateDetailPage';
@@ -71,7 +74,10 @@ export default function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
                 <Route path="/subscription-plans/:id" element={<SubscriptionPlanDetailPage />} />
+                <Route path="/dashboards" element={<DashboardsPage />} />
+                <Route path="/dashboards/:id" element={<DashboardDetailPage />} />
                 <Route path="/client-plans" element={<ClientPlansPage />} />
+
                 <Route path="/kpi-store" element={<KpiStorePage />} />
                 <Route path="/kpi-store/widget-templates/:id" element={<WidgetTemplateDetailPage />} />
                 <Route path="/kpi-store/definitions/:id" element={<KpiDefinitionDetailPage />} />

@@ -11,6 +11,7 @@ import {
     widgetTemplatesApi,
     kpiPacksApi,
     nlqApi,
+    dashboardsApi,
 } from '@/api';
 import { Agent } from '@/types';
 
@@ -291,6 +292,27 @@ export function useNlqTemplate(id: string) {
         queryKey: ['nlq-templates', id],
         queryFn: async () => {
             const resp = await nlqApi.getTemplateById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
+export function useAdminDashboards() {
+    return useQuery({
+        queryKey: ['admin-dashboards'],
+        queryFn: async () => {
+            const resp = await dashboardsApi.getAll();
+            return resp.data;
+        },
+    });
+}
+
+export function useAdminDashboard(id: string) {
+    return useQuery({
+        queryKey: ['admin-dashboards', id],
+        queryFn: async () => {
+            const resp = await dashboardsApi.getById(id);
             return resp.data;
         },
         enabled: !!id,

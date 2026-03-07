@@ -15,6 +15,7 @@ import type {
   Invitation,
   KpiPack,
   AgentLogsResponse,
+  Dashboard,
 } from '@/types';
 
 // Auth
@@ -252,4 +253,16 @@ export const nlqApi = {
 
   getTemplateById: (id: string) =>
     api.get<any>(`/admin/nlq-templates/${id}`),
+};
+
+// Dashboards
+export const dashboardsApi = {
+  getAll: () =>
+    api.get<Dashboard[]>('/admin/dashboards'),
+
+  getById: (id: string) =>
+    api.get<Dashboard>(`/admin/dashboards/${id}`),
+
+  delete: (id: string) =>
+    api.delete(`/admin/dashboards/${id}`),
 };
