@@ -137,6 +137,9 @@ export const agentsApi = {
 
   getLogs: (id: string, params?: { page?: number; limit?: number }) =>
     api.get<AgentLogsResponse>(`/agents/${id}/logs`, { params }),
+
+  delete: (id: string) =>
+    api.delete(`/admin/agents/${id}`),
 };
 
 // Subscription Plans

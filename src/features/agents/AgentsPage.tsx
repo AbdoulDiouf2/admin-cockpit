@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw, ShieldOff, Zap } from 'lucide-react';
+import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw, ShieldOff, Zap, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAgents } from '@/hooks/use-api';
@@ -30,6 +30,7 @@ export function AgentsPage() {
   const [generateOpen, setGenerateOpen] = useState(false);
   const [regenerateAgent, setRegenerateAgent] = useState<Agent | null>(null);
   const [revokeAgent, setRevokeAgent] = useState<Agent | null>(null);
+  const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
 
   const { data: agents, isLoading, error, isFetching } = useAgents();
 
@@ -42,6 +43,25 @@ export function AgentsPage() {
         description: t('agents.revokeTokenSuccess'),
       });
       setRevokeAgent(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.response?.data?.message || t('common.error'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => agentsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents-status'] });
+      toast({
+        title: t('common.success'),
+        description: t('agents.deleteSuccess'),
+      });
+      setDeleteAgent(null);
     },
     onError: (error: any) => {
       toast({
@@ -129,7 +149,7 @@ export function AgentsPage() {
                   {agents?.map((agent) => (
                     <TableRow key={agent.id}>
                       <TableCell className="font-medium">
-                        <Link 
+                        <Link
                           to={`/agents/${agent.id}`}
                           className="text-primary hover:underline"
                         >
@@ -204,6 +224,14 @@ export function AgentsPage() {
                                 </DropdownMenuItem>
                               </>
                             )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteAgent(agent)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t('common.delete')}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -244,6 +272,20 @@ export function AgentsPage() {
         isPending={revokeMutation.isPending}
         confirmLabel={t('agents.revokeToken')}
         cancelLabel={t('common.cancel')}
+      />
+
+      <ConfirmDialog
+        open={deleteAgent !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteAgent(null);
+        }}
+        title={t('agents.deleteConfirmTitle')}
+        description={t('agents.deleteConfirmDesc', { name: deleteAgent?.name })}
+        onConfirm={() => deleteAgent && deleteMutation.mutate(deleteAgent.id)}
+        isPending={deleteMutation.isPending}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        variant="destructive"
       />
     </div>
   );

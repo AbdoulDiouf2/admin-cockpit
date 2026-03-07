@@ -29,6 +29,7 @@ export const fr = {
     collapse: 'Réduire',
     expand: 'Développer',
     view: 'Voir les détails',
+    viewDetails: 'Voir les détails',
     createdAt: 'Créé le',
   },
   auth: {
@@ -292,6 +293,9 @@ export const fr = {
     revokeTokenSuccess: 'Token révoqué avec succès',
     revoked: 'Révoqué',
     expiringSoon: 'Expire bientôt',
+    deleteSuccess: 'Agent supprimé avec succès',
+    deleteConfirmTitle: 'Supprimer l\'agent',
+    deleteConfirmDesc: 'Êtes-vous sûr de vouloir supprimer l\'agent « {{name}} » ? Cette action supprimera également tous ses logs et jobs. Cette action est irréversible.',
   },
   auditLogs: {
     title: "Logs d'audit",
