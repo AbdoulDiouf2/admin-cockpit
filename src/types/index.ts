@@ -230,6 +230,72 @@ export interface KpiPack {
   createdAt: string;
 }
 
+// Billing types
+export type BillingStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'UNPAID' | 'PAUSED';
+
+export interface BillingCustomer {
+  id: string;
+  organizationId: string;
+  stripeCustomerId: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillingInvoice {
+  id: string;
+  organizationId: string;
+  subscriptionId: string;
+  stripeInvoiceId: string;
+  amountPaid: number;   // en XOF (entier)
+  currency: string;     // 'xof'
+  status: string;       // 'paid' | 'open' | 'void'
+  pdfUrl?: string;
+  hostedUrl?: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
+export interface BillingSubscription {
+  id: string;
+  organizationId: string;
+  stripeSubscriptionId: string;
+  planId: string;
+  status: BillingStatus;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  trialEndsAt?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  organization?: Organization;
+  plan?: SubscriptionPlan;
+  customer?: BillingCustomer;
+  invoices?: BillingInvoice[];
+}
+
+export interface BillingAdminSummary {
+  total: number;
+  active: number;
+  trialing: number;
+  pastDue: number;
+  cancelled: number;
+  neverSubscribed: number;
+}
+
+export interface BillingSubscriptionsResponse {
+  subscriptions: BillingSubscription[];
+  unsubscribed: Organization[];
+  summary: BillingAdminSummary;
+}
+
+export interface BillingSubscriptionDetailResponse {
+  organization: Organization;
+  subscription: BillingSubscription | null;
+  hasSubscription: boolean;
+}
+
 // API Response types
 export interface PaginatedResponse<T> {
   data: T[];

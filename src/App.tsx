@@ -23,6 +23,8 @@ import { DashboardDetailPage } from './features/dashboards/DashboardDetailPage';
 import { SubscriptionPlanDetailPage } from './features/subscriptions/SubscriptionPlanDetailPage';
 
 import { ClientPlansPage } from '@/features/subscriptions/ClientPlansPage';
+import { BillingSubscriptionsPage } from '@/features/billing/BillingSubscriptionsPage';
+import { BillingSubscriptionDetailPage } from '@/features/billing/BillingSubscriptionDetailPage';
 import { KpiStorePage } from './features/kpi-store/KpiStorePage';
 import { WidgetTemplateDetailPage } from './features/kpi-store/WidgetTemplateDetailPage';
 import { KpiDefinitionDetailPage } from './features/kpi-store/KpiDefinitionDetailPage';
@@ -77,6 +79,8 @@ export default function App() {
                 <Route path="/dashboards" element={<DashboardsPage />} />
                 <Route path="/dashboards/:id" element={<DashboardDetailPage />} />
                 <Route path="/client-plans" element={<ClientPlansPage />} />
+                <Route path="/billing-subscriptions" element={<BillingSubscriptionsPage />} />
+                <Route path="/billing-subscriptions/:orgId" element={<BillingSubscriptionDetailPage />} />
 
                 <Route path="/kpi-store" element={<KpiStorePage />} />
                 <Route path="/kpi-store/widget-templates/:id" element={<WidgetTemplateDetailPage />} />

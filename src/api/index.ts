@@ -16,6 +16,8 @@ import type {
   KpiPack,
   AgentLogsResponse,
   Dashboard,
+  BillingSubscriptionsResponse,
+  BillingSubscriptionDetailResponse,
 } from '@/types';
 
 // Auth
@@ -256,6 +258,15 @@ export const nlqApi = {
 
   getTemplateById: (id: string) =>
     api.get<any>(`/admin/nlq-templates/${id}`),
+};
+
+// Billing Admin (read-only, SuperAdmin)
+export const billingAdminApi = {
+  getAllSubscriptions: () =>
+    api.get<BillingSubscriptionsResponse>('/admin/billing/subscriptions'),
+
+  getSubscriptionByOrg: (orgId: string) =>
+    api.get<BillingSubscriptionDetailResponse>(`/admin/billing/subscriptions/${orgId}`),
 };
 
 // Dashboards

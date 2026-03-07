@@ -12,6 +12,7 @@ import {
     kpiPacksApi,
     nlqApi,
     dashboardsApi,
+    billingAdminApi,
 } from '@/api';
 import { Agent } from '@/types';
 
@@ -316,5 +317,27 @@ export function useAdminDashboard(id: string) {
             return resp.data;
         },
         enabled: !!id,
+    });
+}
+
+// Billing Admin hooks
+export function useAdminBillingSubscriptions() {
+    return useQuery({
+        queryKey: ['admin-billing-subscriptions'],
+        queryFn: async () => {
+            const resp = await billingAdminApi.getAllSubscriptions();
+            return resp.data;
+        },
+    });
+}
+
+export function useAdminBillingSubscription(orgId: string) {
+    return useQuery({
+        queryKey: ['admin-billing-subscriptions', orgId],
+        queryFn: async () => {
+            const resp = await billingAdminApi.getSubscriptionByOrg(orgId);
+            return resp.data;
+        },
+        enabled: !!orgId,
     });
 }
