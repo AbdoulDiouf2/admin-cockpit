@@ -9,6 +9,8 @@ import {
     XCircle,
     Pencil,
     Info,
+    Database,
+    Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,7 +75,14 @@ export function KpiDefinitionDetailPage() {
                         {t('common.back')}
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{kpi.name}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold tracking-tight">{kpi.name}</h1>
+                            {kpi.code && (
+                                <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                    {kpi.code}
+                                </span>
+                            )}
+                        </div>
                         <code className="text-sm bg-muted px-2 py-0.5 rounded text-primary">
                             {kpi.key}
                         </code>
@@ -94,6 +103,7 @@ export function KpiDefinitionDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* ── Détails principaux ── */}
                 <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -102,20 +112,27 @@ export function KpiDefinitionDetailPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('kpiStore.kpiName')}</p>
-                                <p className="text-lg font-semibold">{kpi.name}</p>
+                                <p className="font-semibold">{kpi.name}</p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('kpiStore.kpiKey')}</p>
                                 <code className="text-sm bg-muted px-1.5 py-0.5 rounded">{kpi.key}</code>
                             </div>
                             <div>
+                                <p className="text-sm font-medium text-muted-foreground">Domaine</p>
+                                <p>{kpi.domain || '—'}</p>
+                            </div>
+                            <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('kpiStore.kpiCategory')}</p>
                                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 capitalize">
                                     {kpi.category}
                                 </span>
+                                {kpi.subcategory && (
+                                    <span className="ml-1 text-xs text-muted-foreground">/ {kpi.subcategory}</span>
+                                )}
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('kpiStore.kpiUnit')}</p>
@@ -124,6 +141,24 @@ export function KpiDefinitionDetailPage() {
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('kpiStore.kpiVizType')}</p>
                                 <code className="text-sm bg-muted px-1.5 py-0.5 rounded">{kpi.defaultVizType}</code>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Fréquence</p>
+                                <p>{kpi.frequency || '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Niveau de risque</p>
+                                <p>{kpi.risk || '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Direction</p>
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                    kpi.direction === 'LOWER_IS_BETTER'
+                                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                                        : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                }`}>
+                                    {kpi.direction === 'LOWER_IS_BETTER' ? '↓ Plus bas = meilleur' : '↑ Plus haut = meilleur'}
+                                </span>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">{t('common.status')}</p>
@@ -147,22 +182,113 @@ export function KpiDefinitionDetailPage() {
                                 <p className="text-muted-foreground mt-1">{kpi.description}</p>
                             </div>
                         )}
+
+                        {kpi.usage && (
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Usage métier</p>
+                                <p className="text-muted-foreground mt-1 text-sm">{kpi.usage}</p>
+                            </div>
+                        )}
+
+                        {(kpi.profiles?.length > 0 || kpi.sectors?.length > 0) && (
+                            <div className="grid grid-cols-2 gap-4">
+                                {kpi.profiles?.length > 0 && (
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Profils cibles</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {kpi.profiles.map((p) => (
+                                                <span key={p} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                                    {p}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {kpi.sectors?.length > 0 && (
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Secteurs</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {kpi.sectors.map((s) => (
+                                                <span key={s} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                    {s}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-primary" />
-                            Usage
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            Ce KPI peut être inclus dans des packs et utilisé pour créer des widgets sur les tableaux de bord.
-                        </p>
-                    </CardContent>
-                </Card>
+                {/* ── Colonne droite ── */}
+                <div className="space-y-6">
+                    {/* Sage 100 */}
+                    {(kpi.sqlSage100View || kpi.sqlSage100Tables?.length > 0) && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Database className="h-4 w-4 text-primary" />
+                                    Source Sage 100
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {kpi.sqlSage100View && (
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground">Vue principale</p>
+                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded block mt-0.5">
+                                            {kpi.sqlSage100View}
+                                        </code>
+                                    </div>
+                                )}
+                                {kpi.sqlSage100Tables?.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">Tables sous-jacentes</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {kpi.sqlSage100Tables.map((tbl) => (
+                                                <code key={tbl} className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                                    {tbl}
+                                                </code>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* ML / IA */}
+                    {kpi.mlUsage && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Brain className="h-4 w-4 text-primary" />
+                                    Usage ML / IA
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">{kpi.mlUsage}</p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Usage générique si aucun des deux blocs ci-dessus */}
+                    {!kpi.sqlSage100View && !kpi.sqlSage100Tables?.length && !kpi.mlUsage && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <BarChart3 className="h-4 w-4 text-primary" />
+                                    Usage
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">
+                                    Ce KPI peut être inclus dans des packs et utilisé pour créer des widgets sur les tableaux de bord.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </div>
 
             {kpi && (

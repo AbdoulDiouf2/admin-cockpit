@@ -199,11 +199,23 @@ export interface AuditLog {
 export interface KpiDefinition {
   id: string;
   key: string;
+  code?: string;
   name: string;
+  domain?: string;
   description?: string;
-  unit?: string;
   category: string;
+  subcategory?: string;
+  usage?: string;
+  unit?: string;
+  frequency?: string;
+  risk?: string;
+  profiles: string[];
+  sectors: string[];
   defaultVizType: string;
+  direction: string;
+  sqlSage100View?: string;
+  sqlSage100Tables: string[];
+  mlUsage?: string;
   isActive: boolean;
   createdAt: string;
 }

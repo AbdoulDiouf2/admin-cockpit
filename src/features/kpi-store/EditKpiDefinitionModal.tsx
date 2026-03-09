@@ -33,12 +33,17 @@ import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import type { KpiDefinition } from '@/types';
 
+const VIZ_TYPES = ['card', 'gauge', 'bar', 'line', 'table', 'pie', 'map', 'text'] as const;
+
 const formSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
+  code: z.string().optional(),
+  domain: z.string().optional(),
   description: z.string().optional(),
+  category: z.string().min(1, 'Catégorie requise'),
+  subcategory: z.string().optional(),
   unit: z.string().optional(),
-  category: z.enum(['finance', 'commercial', 'treasury']),
-  defaultVizType: z.enum(['gauge', 'bar', 'card', 'line', 'table']),
+  defaultVizType: z.enum(VIZ_TYPES),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,10 +63,13 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      code: '',
+      domain: '',
       description: '',
+      category: '',
+      subcategory: '',
       unit: '',
-      category: 'finance',
-      defaultVizType: 'card',
+      defaultVizType: 'bar',
     },
   });
 
@@ -69,10 +77,15 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
     if (kpi) {
       form.reset({
         name: kpi.name,
+        code: kpi.code ?? '',
+        domain: kpi.domain ?? '',
         description: kpi.description ?? '',
+        category: kpi.category,
+        subcategory: kpi.subcategory ?? '',
         unit: kpi.unit ?? '',
-        category: kpi.category as 'finance' | 'commercial' | 'treasury',
-        defaultVizType: kpi.defaultVizType as 'gauge' | 'bar' | 'card' | 'line' | 'table',
+        defaultVizType: (VIZ_TYPES.includes(kpi.defaultVizType as any)
+          ? kpi.defaultVizType
+          : 'bar') as typeof VIZ_TYPES[number],
       });
     }
   }, [kpi, form]);
@@ -95,7 +108,7 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
             {t('kpiStore.editKpi')} — <code className="text-sm">{kpi?.key}</code>
@@ -103,19 +116,34 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('kpiStore.kpiName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('kpiStore.kpiName')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="KPI-F01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -131,6 +159,35 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domaine</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Finance & Trésorerie" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sous-catégorie</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Revenus" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -139,7 +196,7 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiUnit')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="FCFA, %, jours" {...field} />
+                      <Input placeholder="€, %, jours" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,18 +208,9 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiCategory')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="commercial">Commercial</SelectItem>
-                        <SelectItem value="treasury">Trésorerie</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="finance, stock, client…" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -180,11 +228,9 @@ export function EditKpiDefinitionModal({ open, onOpenChange, kpi }: Props) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="card">Card</SelectItem>
-                        <SelectItem value="gauge">Gauge</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="line">Line</SelectItem>
-                        <SelectItem value="table">Table</SelectItem>
+                        {VIZ_TYPES.map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

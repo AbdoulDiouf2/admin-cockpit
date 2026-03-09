@@ -31,13 +31,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 
+const VIZ_TYPES = ['card', 'gauge', 'bar', 'line', 'table', 'pie', 'map', 'text'] as const;
+
 const formSchema = z.object({
   key: z.string().min(1, 'Clé requise').regex(/^[a-z0-9_]+$/, 'Minuscules, chiffres et _ seulement'),
+  code: z.string().optional(),
   name: z.string().min(1, 'Nom requis'),
+  domain: z.string().optional(),
   description: z.string().optional(),
+  category: z.string().min(1, 'Catégorie requise'),
+  subcategory: z.string().optional(),
   unit: z.string().optional(),
-  category: z.enum(['finance', 'commercial', 'treasury']),
-  defaultVizType: z.enum(['gauge', 'bar', 'card', 'line', 'table']),
+  defaultVizType: z.enum(VIZ_TYPES),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,11 +61,14 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       key: '',
+      code: '',
       name: '',
+      domain: '',
       description: '',
+      category: '',
+      subcategory: '',
       unit: '',
-      category: 'finance',
-      defaultVizType: 'card',
+      defaultVizType: 'bar',
     },
   });
 
@@ -83,7 +91,7 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{t('kpiStore.createKpi')}</DialogTitle>
         </DialogHeader>
@@ -97,7 +105,7 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiKey')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="revenue_mom" {...field} />
+                      <Input placeholder="f01_ca_ht" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -105,18 +113,32 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
               />
               <FormField
                 control={form.control}
-                name="name"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('kpiStore.kpiName')}</FormLabel>
+                    <FormLabel>Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="CA Mois/Mois" {...field} />
+                      <Input placeholder="KPI-F01" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('kpiStore.kpiName')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Chiffre d'Affaires HT" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -132,6 +154,35 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domaine</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Finance & Trésorerie" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sous-catégorie</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Revenus" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -140,7 +191,7 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiUnit')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="FCFA, %, jours" {...field} />
+                      <Input placeholder="€, %, jours" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -152,18 +203,9 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('kpiStore.kpiCategory')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="commercial">Commercial</SelectItem>
-                        <SelectItem value="treasury">Trésorerie</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="finance, stock, client…" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -181,11 +223,9 @@ export function CreateKpiDefinitionModal({ open, onOpenChange }: Props) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="card">Card</SelectItem>
-                        <SelectItem value="gauge">Gauge</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="line">Line</SelectItem>
-                        <SelectItem value="table">Table</SelectItem>
+                        {VIZ_TYPES.map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
