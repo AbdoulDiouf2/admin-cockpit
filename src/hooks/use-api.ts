@@ -164,6 +164,17 @@ export function useAuditLogs(filters?: AuditLogFilters) {
     });
 }
 
+export function useAuditLog(id: string) {
+    return useQuery({
+        queryKey: ['audit-log', id],
+        queryFn: async () => {
+            const resp = await auditLogsApi.getById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
 export function useAuditLogEventTypes() {
     return useQuery({
         queryKey: ['audit-log-events'],

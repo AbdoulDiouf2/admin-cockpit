@@ -14,6 +14,7 @@ import { RoleDetailPage } from './features/roles/RoleDetailPage';
 import { AgentsPage } from './features/agents/AgentsPage';
 import { AgentDetailPage } from './features/agents/AgentDetailPage';
 import { AuditLogsPage } from './features/audit-logs/AuditLogsPage';
+import { AuditLogDetailPage } from './features/audit-logs/AuditLogDetailPage';
 import { InvitationsPage } from './features/invitations/InvitationsPage';
 import { HealthPage } from './features/health/HealthPage';
 import { ProfilePage } from './features/profile/ProfilePage';
@@ -73,6 +74,7 @@ export default function App() {
                 <Route path="/agents" element={<AgentsPage />} />
                 <Route path="/agents/:id" element={<AgentDetailPage />} />
                 <Route path="/audit-logs" element={<AuditLogsPage />} />
+                <Route path="/audit-logs/:id" element={<AuditLogDetailPage />} />
                 <Route path="/health" element={<HealthPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />

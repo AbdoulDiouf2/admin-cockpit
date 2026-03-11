@@ -232,6 +232,9 @@ export const auditLogsApi = {
     offset?: number;
   }) => api.get<PaginatedResponse<AuditLog>>('/logs/audit', { params }),
 
+  getById: (id: string) =>
+    api.get<AuditLog>(`/logs/audit/${id}`),
+
   getEventTypes: () =>
     api.get<{ event: string; count: number }[]>('/logs/audit/events'),
 };

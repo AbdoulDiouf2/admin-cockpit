@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Human-readable labels and colors for each audit event type
 const EVENT_META: Record<string, { label: string; classes: string }> = {
@@ -53,6 +54,7 @@ const PAGE_SIZE = 25;
 export function AuditLogsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
   const [filters, setFilters] = useState<AuditLogFilters>({
     limit: PAGE_SIZE,
@@ -156,7 +158,11 @@ export function AuditLogsPage() {
                   </TableHeader>
                   <TableBody>
                     {logsResponse?.data?.map((log) => (
-                      <TableRow key={log.id}>
+                      <TableRow
+                        key={log.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => navigate(`/audit-logs/${log.id}`)}
+                      >
                         <TableCell className="text-sm whitespace-nowrap">
                           {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm')}
                         </TableCell>
