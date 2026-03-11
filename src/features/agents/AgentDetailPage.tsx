@@ -1,30 +1,68 @@
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAgent, useAgentLogs, useAgentJobStats } from '@/hooks/use-api';
+import { useAgent, useAgentLogs, useAgentJobStats, useAgentJobs } from '@/hooks/use-api';
 import { useSocket } from '@/hooks/use-socket';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft,
   Globe,
   Clock,
   Database,
   AlertCircle,
-  CheckCircle2,
   Server,
   Key,
   Zap,
   Loader2,
   FileText,
-  Activity
+  Activity,
+  Search
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { format } from 'date-fns';
-import { useState, useEffect } from 'react';
 import { RegenerateTokenModal } from './RegenerateTokenModal';
+
+const formatJobDuration = (ms: number) => {
+  if (ms <= 0) return '0s';
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const restMs = ms % 1000;
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60) % 60;
+  const hours = Math.floor(totalSeconds / 3600);
+
+  const parts = [];
+
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+
+  // Show seconds if anything larger exists, or if there are actual seconds
+  if (hours > 0 || minutes > 0 || seconds > 0) {
+    parts.push(`${seconds}s`);
+  }
+
+  if (restMs > 0) {
+    if (parts.length === 0) {
+      // If we only have ms, show 0s first to give context as requested earlier
+      parts.push('0s');
+    }
+    parts.push(`${restMs}ms`);
+  }
+
+  return parts.join(' ');
+};
 
 export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,12 +70,50 @@ export function AgentDetailPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: agent, isLoading: isAgentLoading, error } = useAgent(id!);
-  const { data: logData, isLoading: isLogsLoading } = useAgentLogs(id!);
   const { data: jobStats } = useAgentJobStats(id!);
   const { toast } = useToast();
+
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+  const [jobStatusFilter, setJobStatusFilter] = useState<string>('ALL');
+  const [logsPage, setLogsPage] = useState(1);
+  const [jobsPage, setJobsPage] = useState(1);
+  const [searchLogs, setSearchLogs] = useState('');
+  const [searchJobs, setSearchJobs] = useState('');
+  const [debouncedSearchLogs, setDebouncedSearchLogs] = useState('');
+  const [debouncedSearchJobs, setDebouncedSearchJobs] = useState('');
+
+  // Debounce effect for logs
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchLogs(searchLogs), 500);
+    return () => clearTimeout(timer);
+  }, [searchLogs]);
+
+  // Debounce effect for jobs
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchJobs(searchJobs), 500);
+    return () => clearTimeout(timer);
+  }, [searchJobs]);
+
+  const { data: logData, isLoading: isLogsLoading } = useAgentLogs(id!, logsPage, 50, debouncedSearchLogs);
+  const { data: jobsData, isLoading: isJobsLoading } = useAgentJobs(
+    id!,
+    jobsPage,
+    20,
+    jobStatusFilter === 'ALL' ? undefined : jobStatusFilter,
+    debouncedSearchJobs
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setJobsPage(1);
+  }, [jobStatusFilter, debouncedSearchJobs]);
+
+  useEffect(() => {
+    setLogsPage(1);
+  }, [showErrorsOnly, debouncedSearchLogs]);
 
   // Real-time logs via WebSocket
   const { socket } = useSocket('cockpit');
@@ -48,12 +124,20 @@ export function AgentDetailPage() {
     const handleNewLog = (newLog: any) => {
       // Only add log if it belongs to this agent
       if (newLog.agentId === id) {
-        queryClient.setQueryData(['agent-logs', id, 1, 50], (oldData: any) => {
+        // If searching, only add if it matches
+        if (debouncedSearchLogs && !newLog.message.toLowerCase().includes(debouncedSearchLogs.toLowerCase())) {
+          return;
+        }
+
+        queryClient.setQueryData(['agent-logs', id, logsPage, 50, debouncedSearchLogs], (oldData: any) => {
           if (!oldData) return { logs: [newLog], pagination: { total: 1, pages: 1, page: 1, limit: 50 } };
+
+          // Only add to list if we are on page 1
+          if (logsPage !== 1) return oldData;
 
           return {
             ...oldData,
-            logs: [newLog, ...oldData.logs].slice(0, 50), // Keep latest 50
+            logs: [newLog, ...oldData.logs].slice(0, 50),
             pagination: {
               ...oldData.pagination,
               total: oldData.pagination.total + 1
@@ -68,7 +152,7 @@ export function AgentDetailPage() {
     return () => {
       socket.off('agent_log_received', handleNewLog);
     };
-  }, [socket, id, queryClient]);
+  }, [socket, id, queryClient, logsPage, debouncedSearchLogs]);
 
   const isLoading = isAgentLoading; // Keep isLoading for the initial full-screen loading
 
@@ -334,21 +418,29 @@ export function AgentDetailPage() {
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Journal d'activité (Logs)
+                Dashboard d'activité (Logs)
               </CardTitle>
               <CardDescription>
-                Les 50 derniers événements remontés par l'agent
+                Consultez les événements remontés par l'agent
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrer les logs..."
+                  className="pl-8 h-9 text-xs"
+                  value={searchLogs}
+                  onChange={(e) => setSearchLogs(e.target.value)}
+                />
+              </div>
               {(logData?.logs?.filter(l => l.level === 'error').length ?? 0) > 0 && (
                 <button
                   onClick={() => setShowErrorsOnly(v => !v)}
-                  className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded border transition-colors ${
-                    showErrorsOnly
-                      ? 'bg-red-500/15 text-red-600 border-red-300 dark:text-red-400'
-                      : 'bg-muted text-muted-foreground border-transparent hover:border-border'
-                  }`}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded border transition-colors ${showErrorsOnly
+                    ? 'bg-red-500/15 text-red-600 border-red-300 dark:text-red-400'
+                    : 'bg-muted text-muted-foreground border-transparent hover:border-border'
+                    }`}
                 >
                   <AlertCircle className="h-3 w-3" />
                   {logData?.logs?.filter(l => l.level === 'error').length} erreur(s)
@@ -361,6 +453,11 @@ export function AgentDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <div className="flex justify-end mb-2">
+              <span className="text-[10px] text-muted-foreground italic">
+                Logs rafraîchis automatiquement toutes les 10s
+              </span>
+            </div>
             <div className="rounded-md border border-muted bg-black/5 dark:bg-white/5 overflow-hidden">
               <div className="max-h-[400px] overflow-y-auto font-mono text-xs">
                 <table className="w-full border-collapse">
@@ -402,8 +499,8 @@ export function AgentDetailPage() {
                                 </td>
                                 <td className="p-2">
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${isError ? 'bg-red-500/20 text-red-500' :
-                                      log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
-                                        'bg-green-500/20 text-green-500'
+                                    log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
+                                      'bg-green-500/20 text-green-500'
                                     }`}>
                                     {log.level}
                                   </span>
@@ -431,6 +528,229 @@ export function AgentDetailPage() {
                   </tbody>
                 </table>
               </div>
+              {logData?.pagination && logData.pagination.pages > 1 && (
+                <div className="flex items-center justify-between p-3 border-t bg-muted/20">
+                  <span className="text-xs text-muted-foreground">
+                    Page {logData.pagination.page} sur {logData.pagination.pages} ({logData.pagination.total} logs)
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLogsPage(p => Math.max(1, p - 1))}
+                      disabled={logData.pagination.page === 1}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLogsPage(p => Math.min(logData.pagination.pages, p + 1))}
+                      disabled={logData.pagination.page === logData.pagination.pages}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Jobs Card */}
+        <Card className="md:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Historique des Requêtes (Jobs)
+              </CardTitle>
+              <CardDescription>
+                Détails des exécutions SQL passées sur l'agent
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              <Select value={jobStatusFilter} onValueChange={setJobStatusFilter}>
+                <SelectTrigger className="h-9 w-[150px] text-xs">
+                  <SelectValue placeholder="Tous les statuts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Tous les statuts</SelectItem>
+                  <SelectItem value="PENDING">En attente</SelectItem>
+                  <SelectItem value="RUNNING">En cours</SelectItem>
+                  <SelectItem value="COMPLETED">Complétés</SelectItem>
+                  <SelectItem value="FAILED">Échoués</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative w-72">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Chercher dans les requêtes SQL..."
+                  className="pl-8 h-9 text-xs"
+                  value={searchJobs}
+                  onChange={(e) => setSearchJobs(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border border-muted overflow-hidden">
+              <div className="max-h-[500px] overflow-y-auto font-sans text-sm">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-muted z-10">
+                    <tr className="text-left text-muted-foreground border-b border-muted">
+                      <th className="p-3 font-bold w-32 text-[10px] uppercase">Créé</th>
+                      <th className="p-3 font-bold w-32 text-[10px] uppercase">Début</th>
+                      <th className="p-3 font-bold w-24 text-[10px] uppercase">Statut</th>
+                      <th className="p-3 font-bold text-[10px] uppercase">Requête SQL</th>
+                      <th className="p-3 font-bold w-24 text-[10px] uppercase text-right">Durée</th>
+                      <th className="p-3 font-bold w-12 text-[10px] uppercase text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isJobsLoading ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
+                          Chargement des requêtes...
+                        </td>
+                      </tr>
+                    ) : !jobsData?.jobs?.length ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
+                          Aucune requête trouvée.
+                        </td>
+                      </tr>
+                    ) : (
+                      jobsData.jobs.map((job: any) => {
+                        const isExpanded = expandedJobId === job.id;
+                        const isFailed = job.status === 'FAILED';
+                        const isSuccess = job.status === 'COMPLETED';
+
+                        return (
+                          <React.Fragment key={job.id}>
+                            <tr
+                              className={`border-b border-muted/50 transition-colors hover:bg-muted/30 ${isExpanded ? 'bg-muted/20' : ''}`}
+                            >
+                              <td className="p-3 text-muted-foreground whitespace-nowrap text-xs">
+                                {format(new Date(job.createdAt), 'dd/MM HH:mm:ss')}
+                              </td>
+                              <td className="p-3 text-muted-foreground whitespace-nowrap text-xs">
+                                {job.startedAt ? format(new Date(job.startedAt), 'HH:mm:ss.SSS') : '-'}
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isFailed ? 'bg-red-500/10 text-red-500' :
+                                  isSuccess ? 'bg-green-500/10 text-green-500' :
+                                    job.status === 'RUNNING' ? 'bg-blue-500/10 text-blue-500' :
+                                      'bg-gray-500/10 text-gray-400'
+                                  }`}>
+                                  {job.status === 'COMPLETED' ? 'SUCCÈS' :
+                                    job.status === 'FAILED' ? 'ÉCHEC' :
+                                      job.status === 'RUNNING' ? 'EN COURS' : 'ATTENTE'}
+                                </span>
+                              </td>
+                              <td className="p-3 font-mono text-xs">
+                                <div className="line-clamp-1 max-w-xl text-muted-foreground">
+                                  {job.sql}
+                                </div>
+                              </td>
+                              <td className="p-3 text-right font-mono text-[10px]">
+                                {job.startedAt && job.completedAt ? (
+                                  <span className="text-primary font-bold">
+                                    {formatJobDuration(new Date(job.completedAt).getTime() - new Date(job.startedAt).getTime())}
+                                  </span>
+                                ) : job.startedAt ? (
+                                  <span className="text-blue-500 animate-pulse italic">en cours...</span>
+                                ) : '-'}
+                              </td>
+                              <td className="p-3 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                                >
+                                  {isExpanded ? 'Masquer' : 'Détails'}
+                                </Button>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr className="bg-muted/50 border-b border-muted">
+                                <td colSpan={6} className="p-4 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Requête SQL</h4>
+                                      <pre className="p-3 bg-black/5 dark:bg-white/5 rounded border border-muted text-xs font-mono whitespace-pre-wrap break-all">
+                                        {job.sql}
+                                      </pre>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {isFailed ? (
+                                        <>
+                                          <h4 className="text-xs font-bold uppercase tracking-wider text-destructive">Message d'erreur</h4>
+                                          <div className="p-3 bg-destructive/5 dark:bg-destructive/10 rounded border border-destructive/20 text-sm text-destructive font-medium whitespace-pre-wrap">
+                                            {job.errorMessage || 'Erreur inconnue (pas de message retourné)'}
+                                          </div>
+                                        </>
+                                      ) : isSuccess ? (
+                                        <>
+                                          <h4 className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Résultat</h4>
+                                          <pre className="p-3 bg-green-500/5 rounded border border-green-500/20 text-xs font-mono overflow-auto max-h-[200px]">
+                                            {JSON.stringify(job.result, null, 2)}
+                                          </pre>
+                                        </>
+                                      ) : (
+                                        <div className="flex items-center gap-2 text-muted-foreground italic">
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          Attente du résultat...
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-6 text-[10px] text-muted-foreground font-mono">
+                                    <div>ID: {job.id}</div>
+                                    {job.startedAt && <div>Début: {format(new Date(job.startedAt), 'HH:mm:ss.SSS')}</div>}
+                                    {job.completedAt && <div>Fin: {format(new Date(job.completedAt), 'HH:mm:ss.SSS')}</div>}
+                                    {job.startedAt && job.completedAt && (
+                                      <div className="font-bold text-primary">
+                                        Durée: {formatJobDuration(new Date(job.completedAt).getTime() - new Date(job.startedAt).getTime())}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {jobsData?.pagination && jobsData.pagination.pages > 1 && (
+                <div className="flex items-center justify-between p-3 border-t bg-muted/20">
+                  <span className="text-xs text-muted-foreground">
+                    Page {jobsData.pagination.page} sur {jobsData.pagination.pages} ({jobsData.pagination.total} jobs)
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setJobsPage(p => Math.max(1, p - 1))}
+                      disabled={jobsData.pagination.page === 1}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setJobsPage(p => Math.min(jobsData.pagination.pages, p + 1))}
+                      disabled={jobsData.pagination.page === jobsData.pagination.pages}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -441,7 +761,7 @@ export function AgentDetailPage() {
         onOpenChange={setIsRegenerateOpen}
         agent={agent}
       />
-    </div>
+    </div >
   );
 }
 

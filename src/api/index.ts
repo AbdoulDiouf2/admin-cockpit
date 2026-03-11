@@ -140,8 +140,11 @@ export const agentsApi = {
   getJobStats: (id: string) =>
     api.get<{ PENDING: number; RUNNING: number; COMPLETED: number; FAILED: number; total: number }>(`/agents/${id}/job-stats`),
 
-  getLogs: (id: string, params?: { page?: number; limit?: number }) =>
+  getLogs: (id: string, params?: { page?: number; limit?: number; search?: string }) =>
     api.get<AgentLogsResponse>(`/agents/${id}/logs`, { params }),
+
+  getJobs: (id: string, params?: { page?: number; limit?: number; status?: string; search?: string }) =>
+    api.get<any>(`/agents/${id}/jobs`, { params }),
 
   delete: (id: string) =>
     api.delete(`/admin/agents/${id}`),

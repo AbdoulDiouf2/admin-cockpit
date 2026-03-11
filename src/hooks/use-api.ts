@@ -125,15 +125,27 @@ export function useAgentJobStats(id: string) {
     });
 }
 
-export function useAgentLogs(id: string, page = 1, limit = 50) {
+export function useAgentLogs(id: string, page = 1, limit = 50, search?: string) {
     return useQuery({
-        queryKey: ['agent-logs', id, page, limit],
+        queryKey: ['agent-logs', id, page, limit, search],
         queryFn: async () => {
-            const resp = await agentsApi.getLogs(id, { page, limit });
+            const resp = await agentsApi.getLogs(id, { page, limit, search });
             return resp.data;
         },
         enabled: !!id,
         refetchInterval: 10 * 1000, // Rafraîchir toutes les 10s pour le "live" feeling
+    });
+}
+
+export function useAgentJobs(id: string, page = 1, limit = 50, status?: string, search?: string) {
+    return useQuery({
+        queryKey: ['agent-jobs', id, page, limit, status, search],
+        queryFn: async () => {
+            const resp = await agentsApi.getJobs(id, { page, limit, status, search });
+            return resp.data;
+        },
+        enabled: !!id,
+        refetchInterval: 10 * 1000,
     });
 }
 
