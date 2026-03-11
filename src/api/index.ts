@@ -137,6 +137,9 @@ export const agentsApi = {
   testConnection: (id: string) =>
     api.post(`/agents/${id}/test-connection`),
 
+  getJobStats: (id: string) =>
+    api.get<{ PENDING: number; RUNNING: number; COMPLETED: number; FAILED: number; total: number }>(`/agents/${id}/job-stats`),
+
   getLogs: (id: string, params?: { page?: number; limit?: number }) =>
     api.get<AgentLogsResponse>(`/agents/${id}/logs`, { params }),
 

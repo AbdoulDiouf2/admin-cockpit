@@ -113,6 +113,18 @@ export function useAgent(id: string) {
     });
 }
 
+export function useAgentJobStats(id: string) {
+    return useQuery({
+        queryKey: ['agent-job-stats', id],
+        queryFn: async () => {
+            const resp = await agentsApi.getJobStats(id);
+            return resp.data;
+        },
+        enabled: !!id,
+        refetchInterval: 30 * 1000,
+    });
+}
+
 export function useAgentLogs(id: string, page = 1, limit = 50) {
     return useQuery({
         queryKey: ['agent-logs', id, page, limit],

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAgent, useAgentLogs } from '@/hooks/use-api';
+import { useAgent, useAgentLogs, useAgentJobStats } from '@/hooks/use-api';
 import { useSocket } from '@/hooks/use-socket';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentsApi } from '@/api';
@@ -33,6 +33,7 @@ export function AgentDetailPage() {
   const queryClient = useQueryClient();
   const { data: agent, isLoading: isAgentLoading, error } = useAgent(id!);
   const { data: logData, isLoading: isLogsLoading } = useAgentLogs(id!);
+  const { data: jobStats } = useAgentJobStats(id!);
   const { toast } = useToast();
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
@@ -227,42 +228,65 @@ export function AgentDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Sync Stats */}
+        {/* Job Stats */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5 text-primary" />
-              Synchronisation
+              Requêtes exécutées
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-muted/50 rounded-lg space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Lignes synchronisées</p>
-              <p className="text-2xl font-black">{agent.rowsSynced?.toLocaleString() || 0}</p>
+          <CardContent className="space-y-3">
+            {/* Total */}
+            <div className="p-3 bg-muted/50 rounded-lg flex items-center justify-between">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Total</span>
+              <span className="text-2xl font-black">{(jobStats?.total ?? 0).toLocaleString()}</span>
             </div>
 
-            <div className="space-y-3">
+            {/* Par statut */}
+            <div className="space-y-2">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4 text-destructive" /> Erreurs cumulées
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+                  Complétées
                 </span>
-                <span className={`font-bold ${(agent.errorCount || 0) > 0 ? 'text-destructive' : 'text-green-500'}`}>
-                  {agent.errorCount || 0}
+                <span className="font-bold text-green-600 dark:text-green-400">
+                  {(jobStats?.COMPLETED ?? 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" /> Statut actuel
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-destructive inline-block" />
+                  Échouées
                 </span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(agent.status)}`}>
-                  {getStatusLabel(agent.status)}
+                <span className={`font-bold ${(jobStats?.FAILED ?? 0) > 0 ? 'text-destructive' : ''}`}>
+                  {(jobStats?.FAILED ?? 0).toLocaleString()}
                 </span>
               </div>
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Dernier heartbeat : {agent.lastSeen ? format(new Date(agent.lastSeen), 'dd/MM/yyyy HH:mm:ss') : 'Jamais'}
-                </p>
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
+                  En cours
+                </span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">
+                  {(jobStats?.RUNNING ?? 0).toLocaleString()}
+                </span>
               </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-gray-400 inline-block" />
+                  En attente
+                </span>
+                <span className="font-bold text-muted-foreground">
+                  {(jobStats?.PENDING ?? 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">
+                Dernier heartbeat : {agent.lastSeen ? format(new Date(agent.lastSeen), 'dd/MM/yyyy HH:mm:ss') : 'Jamais'}
+              </p>
             </div>
           </CardContent>
         </Card>
