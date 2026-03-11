@@ -258,6 +258,12 @@ export const nlqApi = {
 
   getTemplateById: (id: string) =>
     api.get<any>(`/admin/nlq-templates/${id}`),
+
+  getAllSessions: () =>
+    api.get<any[]>('/admin/nlq-sessions'),
+
+  getSessionById: (id: string) =>
+    api.get<any>(`/admin/nlq-sessions/${id}`),
 };
 
 // Billing Admin (read-only, SuperAdmin)

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Building2,
@@ -79,6 +80,7 @@ function formatPayload(payload: any): string {
 export function DashboardPage() {
 
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: statsData, isLoading, error } = useDashboardStats();
 
   if (isLoading) {
@@ -104,7 +106,8 @@ export function DashboardPage() {
       icon: Building2,
       trend: statsData?.organizations?.trend || '+0',
       color: 'text-blue-500',
-      bg: 'bg-blue-500/10'
+      bg: 'bg-blue-500/10',
+      href: '/organizations',
     },
     {
       label: t('dashboard.totalUsers'),
@@ -112,7 +115,8 @@ export function DashboardPage() {
       icon: Users,
       trend: statsData?.users?.trend || '+0',
       color: 'text-green-500',
-      bg: 'bg-green-500/10'
+      bg: 'bg-green-500/10',
+      href: '/users',
     },
     {
       label: t('dashboard.activeAgents'),
@@ -120,7 +124,8 @@ export function DashboardPage() {
       icon: Cpu,
       trend: statsData?.activeAgents?.trend || '+0',
       color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
+      bg: 'bg-emerald-500/10',
+      href: '/agents',
     },
     {
       label: t('dashboard.errorAgents'),
@@ -128,7 +133,8 @@ export function DashboardPage() {
       icon: AlertTriangle,
       trend: statsData?.errorAgents?.trend || '0',
       color: 'text-red-500',
-      bg: 'bg-red-500/10'
+      bg: 'bg-red-500/10',
+      href: '/agents',
     },
   ];
 
@@ -145,7 +151,11 @@ export function DashboardPage() {
         {mainStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="overflow-hidden border-none shadow-md">
+            <Card
+              key={index}
+              className="overflow-hidden border-none shadow-md cursor-pointer transition-shadow hover:shadow-lg"
+              onClick={() => navigate(stat.href)}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   {stat.label}
@@ -180,28 +190,40 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+              <div
+                className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50 cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => navigate('/kpi-store?tab=definitions')}
+              >
                 <div className="flex items-center gap-2">
                   <Database className="h-4 w-4 text-blue-500" />
                   <span className="text-sm font-medium">KPIs</span>
                 </div>
                 <Badge variant="secondary" className="font-bold">{statsData?.inventory?.kpis || 0}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+              <div
+                className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50 cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => navigate('/kpi-store?tab=packs')}
+              >
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-emerald-500" />
                   <span className="text-sm font-medium">Packs</span>
                 </div>
                 <Badge variant="secondary" className="font-bold">{statsData?.inventory?.packs || 0}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+              <div
+                className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50 cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => navigate('/kpi-store?tab=templates')}
+              >
                 <div className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-amber-500" />
                   <span className="text-sm font-medium">Widgets</span>
                 </div>
                 <Badge variant="secondary" className="font-bold">{statsData?.inventory?.widgets || 0}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50">
+              <div
+                className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50 cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => navigate('/nlq-store?tab=intents')}
+              >
                 <div className="flex items-center gap-2">
                   <Search className="h-4 w-4 text-purple-500" />
                   <span className="text-sm font-medium">NLQ Intents</span>
@@ -209,7 +231,10 @@ export function DashboardPage() {
                 <Badge variant="secondary" className="font-bold">{statsData?.inventory?.intents || 0}</Badge>
               </div>
             </div>
-            <div className="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 px-1">
+            <div
+              className="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 px-1 cursor-pointer hover:text-foreground transition-colors"
+              onClick={() => navigate('/nlq-store?tab=templates')}
+            >
               <Info className="h-3 w-3" />
               Total de {statsData?.inventory?.nlqTemplates || 0} templates SQL configurés.
             </div>
@@ -273,7 +298,10 @@ export function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Plans Distribution */}
-        <Card className="lg:col-span-1 shadow-sm">
+        <Card
+          className="lg:col-span-1 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/subscription-plans')}
+        >
           <CardHeader>
             <CardTitle>Répartition des Plans</CardTitle>
             <CardDescription>Par nombre d'organisations</CardDescription>
@@ -313,6 +341,12 @@ export function DashboardPage() {
               </CardTitle>
               <CardDescription>Dernières actions administratives</CardDescription>
             </div>
+            <button
+              className="text-xs text-primary hover:underline font-medium"
+              onClick={() => navigate('/audit-logs')}
+            >
+              Voir tout →
+            </button>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[280px] pr-4">
@@ -323,7 +357,7 @@ export function DashboardPage() {
                   const details = formatPayload(log.payload);
 
                   return (
-                    <div key={log.id} className="flex items-start gap-4 p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all">
+                    <div key={log.id} className="flex items-start gap-4 p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all cursor-pointer" onClick={() => navigate('/audit-logs')}>
                       <div className={`w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0`}>
                         <Icon className={`h-5 w-5 ${meta.color}`} />
                       </div>

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +10,8 @@ import { KpiPacksTab } from './KpiPacksTab';
 
 export function KpiStorePage() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'definitions');
 
   return (
     <div className="space-y-6">
@@ -27,7 +31,7 @@ export function KpiStorePage() {
           <CardDescription>{t('kpiStore.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="definitions">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="definitions">{t('kpiStore.tabDefinitions')}</TabsTrigger>
               <TabsTrigger value="templates">{t('kpiStore.tabTemplates')}</TabsTrigger>

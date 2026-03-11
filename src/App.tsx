@@ -32,6 +32,7 @@ import { KpiPackDetailPage } from './features/kpi-store/KpiPackDetailPage';
 import { NlqStorePage } from './features/nlq/NlqStorePage';
 import { NlqIntentDetailPage } from './features/nlq/NlqIntentDetailPage';
 import { NlqTemplateDetailPage } from './features/nlq/NlqTemplateDetailPage';
+import { NlqSessionDetailPage } from './features/nlq/NlqSessionDetailPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -89,6 +90,7 @@ export default function App() {
                 <Route path="/nlq-store" element={<NlqStorePage />} />
                 <Route path="/nlq-store/intents/:id" element={<NlqIntentDetailPage />} />
                 <Route path="/nlq-store/templates/:id" element={<NlqTemplateDetailPage />} />
+                <Route path="/nlq-store/sessions/:id" element={<NlqSessionDetailPage />} />
               </Routes>
             </MainLayout>
           </ProtectedRoute>

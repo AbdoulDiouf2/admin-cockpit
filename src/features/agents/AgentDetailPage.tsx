@@ -35,6 +35,8 @@ export function AgentDetailPage() {
   const { data: logData, isLoading: isLogsLoading } = useAgentLogs(id!);
   const { toast } = useToast();
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const [showErrorsOnly, setShowErrorsOnly] = useState(false);
 
   // Real-time logs via WebSocket
   const { socket } = useSocket('cockpit');
@@ -213,12 +215,12 @@ export function AgentDetailPage() {
               </div>
             </div>
 
-            {agent.status === 'error' && agent.lastError && (
+            {agent.lastError && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-destructive">Dernière Erreur</p>
-                  <p className="text-sm text-destructive/80 mt-1">{agent.lastError}</p>
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-destructive">Dernière Erreur Enregistrée</p>
+                  <pre className="text-sm text-destructive/80 mt-1 whitespace-pre-wrap break-all font-sans">{agent.lastError}</pre>
                 </div>
               </div>
             )}
@@ -242,19 +244,23 @@ export function AgentDetailPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Succès
+                  <AlertCircle className="h-4 w-4 text-destructive" /> Erreurs cumulées
                 </span>
-                <span className="font-bold">Normal</span>
+                <span className={`font-bold ${(agent.errorCount || 0) > 0 ? 'text-destructive' : 'text-green-500'}`}>
+                  {agent.errorCount || 0}
+                </span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4 text-destructive" /> Erreurs
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" /> Statut actuel
                 </span>
-                <span className="font-bold text-destructive">{agent.errorCount || 0}</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(agent.status)}`}>
+                  {getStatusLabel(agent.status)}
+                </span>
               </div>
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground italic">
-                  Dernier flux : {agent.lastSync ? format(new Date(agent.lastSync), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                <p className="text-xs text-muted-foreground">
+                  Dernier heartbeat : {agent.lastSeen ? format(new Date(agent.lastSeen), 'dd/MM/yyyy HH:mm:ss') : 'Jamais'}
                 </p>
               </div>
             </div>
@@ -311,6 +317,19 @@ export function AgentDetailPage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {(logData?.logs?.filter(l => l.level === 'error').length ?? 0) > 0 && (
+                <button
+                  onClick={() => setShowErrorsOnly(v => !v)}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded border transition-colors ${
+                    showErrorsOnly
+                      ? 'bg-red-500/15 text-red-600 border-red-300 dark:text-red-400'
+                      : 'bg-muted text-muted-foreground border-transparent hover:border-border'
+                  }`}
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  {logData?.logs?.filter(l => l.level === 'error').length} erreur(s)
+                </button>
+              )}
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded">
                 <Activity className="h-3 w-3" />
                 Live Update
@@ -342,24 +361,48 @@ export function AgentDetailPage() {
                         </td>
                       </tr>
                     ) : (
-                      logData.logs.map((log) => (
-                        <tr key={log.id} className="border-b border-muted/50 hover:bg-muted/30 transition-colors">
-                          <td className="p-2 text-muted-foreground whitespace-nowrap">
-                            {format(new Date(log.timestamp), 'dd/MM HH:mm:ss')}
-                          </td>
-                          <td className="p-2">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${log.level === 'error' ? 'bg-red-500/20 text-red-500' :
-                                log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
-                                  'bg-green-500/20 text-green-500'
-                              }`}>
-                              {log.level}
-                            </span>
-                          </td>
-                          <td className="p-2 break-all text-foreground/90 leading-relaxed font-sans">
-                            {log.message}
-                          </td>
-                        </tr>
-                      ))
+                      logData.logs
+                        .filter(log => !showErrorsOnly || log.level === 'error')
+                        .map((log) => {
+                          const isExpanded = expandedLogId === log.id;
+                          const isError = log.level === 'error';
+                          return (
+                            <>
+                              <tr
+                                key={log.id}
+                                className={`border-b border-muted/50 transition-colors ${isError ? 'cursor-pointer hover:bg-red-500/5' : 'hover:bg-muted/30'}`}
+                                onClick={() => isError && setExpandedLogId(isExpanded ? null : log.id)}
+                              >
+                                <td className="p-2 text-muted-foreground whitespace-nowrap">
+                                  {format(new Date(log.timestamp), 'dd/MM HH:mm:ss')}
+                                </td>
+                                <td className="p-2">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${isError ? 'bg-red-500/20 text-red-500' :
+                                      log.level === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
+                                        'bg-green-500/20 text-green-500'
+                                    }`}>
+                                    {log.level}
+                                  </span>
+                                </td>
+                                <td className="p-2 break-all text-foreground/90 leading-relaxed font-sans">
+                                  <span className={isError && !isExpanded ? 'line-clamp-1' : ''}>{log.message}</span>
+                                  {isError && (
+                                    <span className="ml-2 text-[10px] text-red-400 font-mono">{isExpanded ? '▲ réduire' : '▼ détails'}</span>
+                                  )}
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr key={`${log.id}-expanded`} className="border-b border-red-200/30 bg-red-500/5">
+                                  <td colSpan={3} className="p-0">
+                                    <pre className="p-3 text-xs text-red-500/90 whitespace-pre-wrap break-all font-mono leading-relaxed">
+                                      {log.message}
+                                    </pre>
+                                  </td>
+                                </tr>
+                              )}
+                            </>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>

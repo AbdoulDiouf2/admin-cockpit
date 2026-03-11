@@ -75,7 +75,7 @@ export function DataTable<TData, TValue>({
     })
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
                 <div className="flex flex-1 items-center space-x-2">
                     {searchKey && (
@@ -180,8 +180,8 @@ export function DataTable<TData, TValue>({
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
-                    {t('dataTable.rowsSelected', {
-                        count: table.getFilteredSelectedRowModel().rows.length,
+                    {t('dataTable.rowsDisplayed', {
+                        count: table.getRowModel().rows.length,
                         total: table.getFilteredRowModel().rows.length
                     })}
                 </div>

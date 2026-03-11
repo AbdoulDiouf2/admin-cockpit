@@ -299,6 +299,17 @@ export function useNlqTemplate(id: string) {
     });
 }
 
+export function useNlqSession(id: string) {
+    return useQuery({
+        queryKey: ['nlq-sessions', id],
+        queryFn: async () => {
+            const resp = await nlqApi.getSessionById(id);
+            return resp.data;
+        },
+        enabled: !!id,
+    });
+}
+
 export function useAdminDashboards() {
     return useQuery({
         queryKey: ['admin-dashboards'],
