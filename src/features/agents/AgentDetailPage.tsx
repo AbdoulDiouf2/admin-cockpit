@@ -300,15 +300,6 @@ export function AgentDetailPage() {
               </div>
             </div>
 
-            {agent.lastError && (
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-destructive">Dernière Erreur Enregistrée</p>
-                  <pre className="text-sm text-destructive/80 mt-1 whitespace-pre-wrap break-all font-sans">{agent.lastError}</pre>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -602,8 +593,9 @@ export function AgentDetailPage() {
                       <th className="p-3 font-bold w-32 text-[10px] uppercase">Créé</th>
                       <th className="p-3 font-bold w-32 text-[10px] uppercase">Début</th>
                       <th className="p-3 font-bold w-24 text-[10px] uppercase">Statut</th>
+                      <th className="p-3 font-bold w-32 text-[10px] uppercase">Utilisateur</th>
                       <th className="p-3 font-bold text-[10px] uppercase">Requête SQL</th>
-                      <th className="p-3 font-bold w-24 text-[10px] uppercase text-right">Durée</th>
+                      <th className="p-3 font-bold w-20 text-[10px] uppercase text-right">Durée</th>
                       <th className="p-3 font-bold w-12 text-[10px] uppercase text-right"></th>
                     </tr>
                   </thead>
@@ -616,7 +608,7 @@ export function AgentDetailPage() {
                       </tr>
                     ) : !jobsData?.jobs?.length ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground italic">
                           Aucune requête trouvée.
                         </td>
                       </tr>
@@ -648,6 +640,9 @@ export function AgentDetailPage() {
                                       job.status === 'RUNNING' ? 'EN COURS' : 'ATTENTE'}
                                 </span>
                               </td>
+                              <td className="p-3 text-xs text-muted-foreground truncate max-w-[120px]">
+                                {job.user ? `${job.user.firstName} ${job.user.lastName || ''}`.trim() : <span className="italic text-[10px] opacity-50">Système</span>}
+                              </td>
                               <td className="p-3 font-mono text-xs">
                                 <div className="line-clamp-1 max-w-xl text-muted-foreground">
                                   {job.sql}
@@ -675,7 +670,7 @@ export function AgentDetailPage() {
                             </tr>
                             {isExpanded && (
                               <tr className="bg-muted/50 border-b border-muted">
-                                <td colSpan={6} className="p-4 space-y-4">
+                                <td colSpan={7} className="p-4 space-y-4">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Requête SQL</h4>
