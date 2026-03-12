@@ -140,8 +140,8 @@ export function AgentsPage() {
                     <TableHead>Agent</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Version</TableHead>
-                    <TableHead>Données synchronisées</TableHead>
-                    <TableHead>Dernière synchro</TableHead>
+                    <TableHead>Organisation</TableHead>
+                    <TableHead>Dernière activité</TableHead>
                     <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -180,16 +180,11 @@ export function AgentsPage() {
                       </TableCell>
                       <TableCell>{agent.version || '—'}</TableCell>
                       <TableCell>
-                        {agent.rowsSynced?.toLocaleString() || 0} lignes
-                        {agent.errorCount > 0 && (
-                          <span className="ml-2 text-xs text-destructive">
-                            ({agent.errorCount} erreur{agent.errorCount > 1 ? 's' : ''})
-                          </span>
-                        )}
+                        {agent.organization?.name || '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {agent.lastSync
-                          ? format(new Date(agent.lastSync), 'dd/MM/yyyy HH:mm')
+                        {agent.lastSeen
+                          ? format(new Date(agent.lastSeen), 'dd/MM/yyyy HH:mm')
                           : '—'}
                       </TableCell>
                       <TableCell className="text-right">
