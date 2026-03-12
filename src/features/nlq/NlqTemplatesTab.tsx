@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { nlqApi } from '@/api';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NlqTemplate {
@@ -28,6 +30,7 @@ export function NlqTemplatesTab() {
     const navigate = useNavigate();
     const [templates, setTemplates] = useState<NlqTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -43,8 +46,29 @@ export function NlqTemplatesTab() {
         fetchTemplates();
     }, []);
 
+    const filteredTemplates = templates.filter((tpl) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            tpl.intentKey.toLowerCase().includes(query) ||
+            (tpl.sqlQuery && tpl.sqlQuery.toLowerCase().includes(query)) ||
+            (tpl.sageType && tpl.sageType.toLowerCase().includes(query))
+        );
+    });
+
     return (
         <div className="space-y-4">
+            <div className="flex items-center gap-2 max-w-sm">
+                <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder={t('common.search') + "..."}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+            </div>
+            
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -63,14 +87,14 @@ export function NlqTemplatesTab() {
                                     {t('common.loading')}
                                 </TableCell>
                             </TableRow>
-                        ) : templates.length === 0 ? (
+                        ) : filteredTemplates.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center h-24">
                                     {t('common.noData')}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            templates.map((tpl) => (
+                            filteredTemplates.map((tpl) => (
                                 <TableRow key={tpl.id}>
                                     <TableCell className="font-mono text-xs">
                                         <Button

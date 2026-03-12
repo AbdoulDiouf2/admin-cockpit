@@ -236,7 +236,7 @@ export function NlqSessionDetailPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => navigate(`/nlq-store/intents/${session.intentKey}`)}
+                                        onClick={() => navigate(`/nlq-store/intents/${session.intent.id || session.intentKey}`)}
                                     >
                                         Voir l'intention complète →
                                     </Button>
