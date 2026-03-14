@@ -296,6 +296,121 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      {/* Agents Status + Sectors */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Agent Status Donut */}
+        <Card className="lg:col-span-1 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/agents')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-primary" />
+              Statut des Agents
+            </CardTitle>
+            <CardDescription>Répartition online / offline / erreur</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statsData?.agentsDistribution || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {statsData?.agentsDistribution?.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sectors Bar Chart */}
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle>Secteurs d'activité</CardTitle>
+            <CardDescription>Répartition des organisations par secteur</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={statsData?.sectorDistribution || []} margin={{ top: 5, right: 10, left: -20, bottom: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-xs" tickLine={false} axisLine={false} angle={-30} textAnchor="end" interval={0} />
+                  <YAxis className="text-xs" tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <Bar dataKey="value" name="Organisations" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Onboarding Funnel + Agent Jobs */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Onboarding Funnel */}
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle>Funnel Onboarding</CardTitle>
+            <CardDescription>Organisations bloquées par étape (wizard non complété)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={statsData?.onboardingFunnel || []} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                  <XAxis dataKey="step" className="text-xs" tickLine={false} axisLine={false} />
+                  <YAxis className="text-xs" tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="bloquées" name="Bloquées" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="complétées" name="Complétées" fill="#22c55e" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agent Jobs Santé */}
+        <Card className="lg:col-span-1 shadow-sm">
+          <CardHeader>
+            <CardTitle>Jobs Agent</CardTitle>
+            <CardDescription>Statut des exécutions (7 derniers jours)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statsData?.agentJobsStats || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {statsData?.agentJobsStats?.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Plans Distribution */}
         <Card
