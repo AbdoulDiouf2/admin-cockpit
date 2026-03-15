@@ -7,10 +7,30 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
 import { useAdminBillingSubscriptions } from '@/hooks/use-api';
 import { BillingSubscription, BillingStatus, Organization } from '@/types';
-import { CreditCard, Users, TrendingUp, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Users, TrendingUp, AlertTriangle, XCircle, Loader2, Clock } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 
-function StatusBadge({ status }: { status: BillingStatus }) {
+function StatusBadge({ status, trialEndsAt }: { status: BillingStatus; trialEndsAt?: string | null }) {
   const { t } = useTranslation();
+
+  if (status === 'TRIALING' && trialEndsAt) {
+    const days = differenceInDays(new Date(trialEndsAt), new Date());
+    const expired = days < 0;
+    return (
+      <div className="flex flex-col gap-0.5">
+        <Badge variant="secondary" className={expired ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-800 border-amber-200'}>
+          <Clock className="w-3 h-3 mr-1" />
+          {expired ? 'Essai expiré' : days === 0 ? 'Essai · dernier jour' : `Essai · J-${days}`}
+        </Badge>
+        {!expired && (
+          <span className="text-[10px] text-muted-foreground pl-0.5">
+            Fin le {new Date(trialEndsAt).toLocaleDateString('fr-FR')}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   const map: Record<BillingStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
     ACTIVE:    { label: t('billingAdmin.statusActive'),    variant: 'default' },
     TRIALING:  { label: t('billingAdmin.statusTrialing'),  variant: 'secondary' },
@@ -68,7 +88,7 @@ export function BillingSubscriptionsPage() {
       cell: ({ row }) => {
         const sub = row.original.sub;
         return sub ? (
-          <StatusBadge status={sub.status} />
+          <StatusBadge status={sub.status} trialEndsAt={sub.trialEndsAt} />
         ) : (
           <Badge variant="outline">{t('billingAdmin.noSubscription')}</Badge>
         );
@@ -76,13 +96,22 @@ export function BillingSubscriptionsPage() {
     },
     {
       id: 'periodEnd',
-      header: t('billingAdmin.columnPeriodEnd'),
+      header: 'Échéance',
       cell: ({ row }) => {
         const sub = row.original.sub;
-        return sub ? (
-          <span className="text-sm">{new Date(sub.currentPeriodEnd).toLocaleDateString('fr-FR')}</span>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+        if (!sub) return <span className="text-xs text-muted-foreground">—</span>;
+        const isTrial = sub.status === 'TRIALING' && sub.trialEndsAt;
+        const date = isTrial ? new Date(sub.trialEndsAt!) : new Date(sub.currentPeriodEnd);
+        const daysLeft = differenceInDays(date, new Date());
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm">{date.toLocaleDateString('fr-FR')}</span>
+            {daysLeft >= 0 && daysLeft <= 7 && (
+              <span className="text-[10px] text-orange-600 font-medium">
+                {daysLeft === 0 ? 'Aujourd\'hui' : `dans ${daysLeft}j`}
+              </span>
+            )}
+          </div>
         );
       },
     },

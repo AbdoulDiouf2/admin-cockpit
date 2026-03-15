@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Activity,
@@ -10,6 +10,7 @@ import {
   XCircle,
   Clock,
   Server,
+  BookOpen
 } from 'lucide-react';
 import { healthApi } from '@/api';
 import { format } from 'date-fns';
@@ -54,6 +55,8 @@ export function HealthPage() {
 
   const apiOk = !apiError && apiHealth?.status === 'ok';
   const dbOk = !dbError && dbHealth?.status === 'ok';
+  const redisOk = dbHealth?.redis === 'connected';
+  const mkdocsOk = dbHealth?.mkdocs === 'connected';
   const isFetching = apiFetching || dbFetching;
 
   return (
@@ -77,13 +80,13 @@ export function HealthPage() {
       </div>
 
       {/* Summary indicators */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* API Status */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-base">{t('health.api')}</CardTitle>
+              <CardTitle className="text-base">{t('health.api', 'API Backend')}</CardTitle>
             </div>
             {apiLoading ? (
               <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -145,7 +148,7 @@ export function HealthPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-base">{t('health.database')}</CardTitle>
+              <CardTitle className="text-base">{t('health.database', 'PostgreSQL')}</CardTitle>
             </div>
             {dbLoading ? (
               <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -195,6 +198,120 @@ export function HealthPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Redis Status */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base">{t('health.redis', 'Cache Redis')}</CardTitle>
+            </div>
+            {dbLoading ? (
+              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : redisOk ? (
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+            ) : (
+              <XCircle className="h-6 w-6 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('health.status')}</span>
+              {dbLoading ? (
+                <span className="text-sm text-muted-foreground">Vérification...</span>
+              ) : (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    redisOk
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  }`}
+                >
+                  {redisOk ? t('health.ok') : t('health.error')}
+                </span>
+              )}
+            </div>
+
+            {dbHealth && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Connexion</span>
+                <span className="text-sm font-mono">{dbHealth.redis}</span>
+              </div>
+            )}
+
+            {dbHealth?.redisError && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400 truncate" title={dbHealth.redisError}>
+                {dbHealth.redisError}
+              </div>
+            )}
+
+            {dbUpdatedAt > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                <Clock className="h-3.5 w-3.5" />
+                {t('health.lastChecked')} :{' '}
+                {format(new Date(dbUpdatedAt), 'HH:mm:ss')}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* MkDocs Status */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base">{t('health.mkdocs', 'Doc MkDocs')}</CardTitle>
+            </div>
+            {dbLoading ? (
+              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : mkdocsOk ? (
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+            ) : (
+              <XCircle className="h-6 w-6 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('health.status')}</span>
+              {dbLoading ? (
+                <span className="text-sm text-muted-foreground">Vérification...</span>
+              ) : (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    mkdocsOk
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : dbHealth?.mkdocs === 'not_configured'
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  }`}
+                >
+                  {mkdocsOk ? t('health.ok') : dbHealth?.mkdocs === 'not_configured' ? 'Non configuré' : t('health.error')}
+                </span>
+              )}
+            </div>
+
+            {dbHealth && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Connexion</span>
+                <span className="text-sm font-mono">{dbHealth.mkdocs}</span>
+              </div>
+            )}
+
+            {dbHealth?.mkdocsError && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400 truncate" title={dbHealth.mkdocsError}>
+                {dbHealth.mkdocsError}
+              </div>
+            )}
+
+            {dbUpdatedAt > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                <Clock className="h-3.5 w-3.5" />
+                {t('health.lastChecked')} :{' '}
+                {format(new Date(dbUpdatedAt), 'HH:mm:ss')}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Global Status Banner */}
@@ -204,13 +321,11 @@ export function HealthPage() {
             <Server className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium">
-                {apiOk && dbOk
+                {apiOk && dbOk && redisOk && mkdocsOk
                   ? 'Tous les systèmes sont opérationnels'
                   : !apiOk && !dbOk
-                  ? 'API et base de données inaccessibles'
-                  : !apiOk
-                  ? 'API inaccessible'
-                  : 'Base de données inaccessible'}
+                  ? 'API et bases de données inaccessibles'
+                  : 'Un ou plusieurs composants sont en erreur'}
               </p>
               <p className="text-xs text-muted-foreground">
                 Endpoint API : {import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}
@@ -218,7 +333,7 @@ export function HealthPage() {
             </div>
             <div
               className={`h-3 w-3 rounded-full ${
-                apiOk && dbOk
+                apiOk && dbOk && redisOk && mkdocsOk
                   ? 'bg-green-500'
                   : apiOk || dbOk
                   ? 'bg-yellow-500'
