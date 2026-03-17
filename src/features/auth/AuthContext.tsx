@@ -30,22 +30,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const response = await authApi.me();
-        setState({
-          user: response.data,
-          accessToken: token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        const user = response.data;
+        const isSuperAdmin = user.userRoles?.some(
+          (ur: any) => ur.role?.name === 'superadmin'
+        );
+        if (!isSuperAdmin) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
+          return;
+        }
+        setState({ user, accessToken: token, isAuthenticated: true, isLoading: false });
       } catch {
         // Token invalid - clear storage
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        setState({
-          user: null,
-          accessToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
       }
     };
 
@@ -54,17 +54,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     const response = await authApi.login(credentials);
-    const { accessToken, refreshToken, user } = response.data;
+    const { accessToken, refreshToken } = response.data;
 
+    // Stocker provisoirement pour permettre l'appel authApi.me()
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
 
-    setState({
-      user,
-      accessToken,
-      isAuthenticated: true,
-      isLoading: false,
-    });
+    // Récupérer le profil complet avec les rôles
+    let user: User;
+    try {
+      const meResponse = await authApi.me();
+      user = meResponse.data;
+    } catch {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      throw new Error('AUTH_FAILED');
+    }
+
+    const isSuperAdmin = user.userRoles?.some(
+      (ur: any) => ur.role?.name === 'superadmin'
+    );
+    if (!isSuperAdmin) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      throw new Error('FORBIDDEN_NOT_SUPERADMIN');
+    }
+
+    setState({ user, accessToken, isAuthenticated: true, isLoading: false });
   };
 
   const logout = async () => {

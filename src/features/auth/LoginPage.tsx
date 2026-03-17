@@ -41,8 +41,12 @@ export function LoginPage() {
       await login({ email, password });
       navigate('/dashboard');
     } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(errorMessage || t('auth.invalidCredentials'));
+      if ((err as Error)?.message === 'FORBIDDEN_NOT_SUPERADMIN') {
+        setError('Accès refusé. Ce portail est réservé aux administrateurs Cockpit.');
+      } else {
+        const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        setError(errorMessage || t('auth.invalidCredentials'));
+      }
     } finally {
       setIsLoading(false);
     }
