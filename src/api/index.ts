@@ -42,6 +42,10 @@ export const authApi = {
 
   resetPassword: (data: any) =>
     api.post('/auth/reset-password', data),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post('/auth/change-password', data),
+
 };
 
 // Admin - Organizations
@@ -291,6 +295,15 @@ export const billingAdminApi = {
 
   getSubscriptionByOrg: (orgId: string) =>
     api.get<BillingSubscriptionDetailResponse>(`/admin/billing/subscriptions/${orgId}`),
+};
+
+// System config (global, superadmin only)
+export const systemConfigApi = {
+  get: () =>
+    api.get<{ notificationPreferences: Record<string, unknown> | null }>('/admin/system-config'),
+
+  update: (data: { notificationPreferences: Record<string, unknown> }) =>
+    api.patch<{ notificationPreferences: Record<string, unknown> | null }>('/admin/system-config', data),
 };
 
 // Dashboards

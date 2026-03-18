@@ -15,6 +15,7 @@ import {
   BarChart3,
   Calendar,
   Brain,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +40,7 @@ const navItems = [
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
   { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
   { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },
+  { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {

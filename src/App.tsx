@@ -18,6 +18,7 @@ import { AuditLogDetailPage } from './features/audit-logs/AuditLogDetailPage';
 import { InvitationsPage } from './features/invitations/InvitationsPage';
 import { HealthPage } from './features/health/HealthPage';
 import { ProfilePage } from './features/profile/ProfilePage';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { SubscriptionPlansPage } from './features/subscriptions/SubscriptionPlansPage';
 import { DashboardsPage } from './features/dashboards/DashboardsPage';
 import { DashboardDetailPage } from './features/dashboards/DashboardDetailPage';
@@ -77,6 +78,7 @@ export default function App() {
                 <Route path="/audit-logs/:id" element={<AuditLogDetailPage />} />
                 <Route path="/health" element={<HealthPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
                 <Route path="/subscription-plans/:id" element={<SubscriptionPlanDetailPage />} />
                 <Route path="/dashboards" element={<DashboardsPage />} />
