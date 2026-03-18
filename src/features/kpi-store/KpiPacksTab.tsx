@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Plus, MoreHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   DropdownMenu,
@@ -22,7 +23,11 @@ import { useNavigate } from 'react-router-dom';
 import { CreateKpiPackModal } from './CreateKpiPackModal';
 import { EditKpiPackModal } from './EditKpiPackModal';
 
-export function KpiPacksTab() {
+interface KpiPacksTabProps {
+  onCreateClick?: () => void;
+}
+
+export function KpiPacksTab({ onCreateClick }: KpiPacksTabProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,7 +36,23 @@ export function KpiPacksTab() {
   const [editPack, setEditPack] = useState<KpiPack | null>(null);
   const [togglePack, setTogglePack] = useState<KpiPack | null>(null);
 
+  const [filterProfile, setFilterProfile] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   const { data: packs, isLoading } = useKpiPacks();
+
+  const filteredPacks = useMemo(() => {
+    if (!packs) return [];
+    return packs.filter((p) => {
+      if (filterProfile && p.profile !== filterProfile) return false;
+      if (filterStatus === 'true' && !p.isActive) return false;
+      if (filterStatus === 'false' && p.isActive) return false;
+      return true;
+    });
+  }, [packs, filterProfile, filterStatus]);
+
+  const hasActiveFilters = filterProfile !== '' || filterStatus !== '';
+  const resetFilters = () => { setFilterProfile(''); setFilterStatus(''); };
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => kpiPacksApi.toggle(id),
@@ -145,19 +166,50 @@ export function KpiPacksTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('kpiStore.createPack')}
-        </Button>
-      </div>
+      {!onCreateClick && (
+        <div className="flex justify-end">
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('kpiStore.createPack')}
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="h-[300px] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <DataTable columns={columns} data={packs ?? []} searchKey="label" />
+        <DataTable
+          columns={columns}
+          data={filteredPacks}
+          searchKey="label"
+          extraFilters={
+            <FilterBar
+              filters={[
+                {
+                  key: 'profile',
+                  label: t('kpiStore.packProfile'),
+                  options: ['daf', 'dg', 'controller', 'manager', 'analyst'].map((p) => ({ label: p.toUpperCase(), value: p })),
+                  value: filterProfile,
+                  onChange: setFilterProfile,
+                },
+                {
+                  key: 'status',
+                  label: t('common.status'),
+                  options: [
+                    { label: t('kpiStore.active'), value: 'true' },
+                    { label: t('kpiStore.inactive'), value: 'false' },
+                  ],
+                  value: filterStatus,
+                  onChange: setFilterStatus,
+                },
+              ]}
+              onReset={resetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          }
+        />
       )}
 
       <CreateKpiPackModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />

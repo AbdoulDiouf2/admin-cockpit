@@ -268,6 +268,9 @@ export const nlqApi = {
   getTemplateById: (id: string) =>
     api.get<any>(`/admin/nlq-templates/${id}`),
 
+  toggleTemplate: (id: string) =>
+    api.patch<any>(`/admin/nlq-templates/${id}/toggle`),
+
   getAllSessions: () =>
     api.get<any[]>('/admin/nlq-sessions'),
 

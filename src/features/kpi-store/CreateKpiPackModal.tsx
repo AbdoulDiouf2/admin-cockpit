@@ -30,8 +30,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { kpiPacksApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useKpiDefinitions } from '@/hooks/use-api';
+import { useState } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Identifiant requis').regex(/^[a-z0-9_]+$/, 'Minuscules, chiffres et _ seulement'),
@@ -53,6 +54,7 @@ export function CreateKpiPackModal({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: kpiDefs } = useKpiDefinitions();
+  const [kpiSearch, setKpiSearch] = useState('');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -83,10 +85,16 @@ export function CreateKpiPackModal({ open, onOpenChange }: Props) {
   });
 
   const activeKpis = kpiDefs?.filter((k) => k.isActive) ?? [];
+  const filteredKpis = kpiSearch
+    ? activeKpis.filter((k) =>
+        k.name.toLowerCase().includes(kpiSearch.toLowerCase()) ||
+        k.key.toLowerCase().includes(kpiSearch.toLowerCase())
+      )
+    : activeKpis;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>{t('kpiStore.createPack')}</DialogTitle>
         </DialogHeader>
@@ -167,8 +175,18 @@ export function CreateKpiPackModal({ open, onOpenChange }: Props) {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t('kpiStore.packKpis')}</FormLabel>
-                  <div className="grid grid-cols-2 gap-2 rounded-md border p-3 max-h-[300px] overflow-y-auto">
-                    {activeKpis.map((kpi) => (
+                  <div className="rounded-md border">
+                    <div className="relative border-b p-2">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder={t('common.search') + '...'}
+                        value={kpiSearch}
+                        onChange={(e) => setKpiSearch(e.target.value)}
+                        className="pl-8 h-7 text-sm border-none focus-visible:ring-0 bg-transparent"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 p-3 max-h-[280px] overflow-y-auto">
+                    {filteredKpis.map((kpi) => (
                       <div key={kpi.key} className="flex items-center gap-2">
                         <Checkbox
                           id={`kpi-${kpi.key}`}
@@ -187,9 +205,12 @@ export function CreateKpiPackModal({ open, onOpenChange }: Props) {
                         </label>
                       </div>
                     ))}
-                    {activeKpis.length === 0 && (
-                      <p className="text-sm text-muted-foreground col-span-2">Aucun KPI actif disponible</p>
+                    {filteredKpis.length === 0 && (
+                      <p className="text-sm text-muted-foreground col-span-2 py-2">
+                        {kpiSearch ? t('common.noData') : 'Aucun KPI actif disponible'}
+                      </p>
                     )}
+                    </div>
                   </div>
                   {fieldState.error && (
                     <p className="text-sm font-medium text-destructive">{fieldState.error.message}</p>

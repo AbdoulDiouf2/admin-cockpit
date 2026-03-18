@@ -10,19 +10,13 @@ import { useState } from 'react';
 import { usersApi } from '@/api';
 import { useAdminUsers, useOrganizations, useRoles } from '@/hooks/use-api';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { InviteUserModal } from './InviteUserModal';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
 import { ColumnDef } from '@tanstack/react-table';
 import { User } from '@/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,25 +36,24 @@ export function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [orgFilter, setOrgFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [orgFilter, setOrgFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
 
   const { data: users, isLoading, error } = useAdminUsers();
   const { data: organizations } = useOrganizations();
   const { data: roles } = useRoles();
 
   const filteredUsers = (users || []).filter((user) => {
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'active' ? user.isActive : !user.isActive);
-    const matchesOrg = orgFilter === 'all' || user.organizationId === orgFilter;
-    const matchesRole =
-      roleFilter === 'all' ||
-      user.userRoles?.some((ur) => ur.role?.name === roleFilter);
-
-    return matchesStatus && matchesOrg && matchesRole;
+    if (statusFilter === 'active' && !user.isActive) return false;
+    if (statusFilter === 'inactive' && user.isActive) return false;
+    if (orgFilter && user.organizationId !== orgFilter) return false;
+    if (roleFilter && !user.userRoles?.some((ur) => ur.role?.name === roleFilter)) return false;
+    return true;
   });
+
+  const hasActiveFilters = statusFilter !== '' || orgFilter !== '' || roleFilter !== '';
+  const resetFilters = () => { setStatusFilter(''); setOrgFilter(''); setRoleFilter(''); };
 
   const deleteMutation = useMutation({
     mutationFn: (userId: string) => usersApi.delete(userId),
@@ -202,66 +195,6 @@ export function UsersPage() {
           </CardTitle>
           <CardDescription>{t('users.listSubtitle')}</CardDescription>
 
-          <div className="flex flex-wrap items-center gap-3 mt-4">
-            <div className="w-[180px]">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-                <SelectTrigger className="text-left">
-                  <SelectValue placeholder={t('common.status')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('users.filterStatus')}</SelectItem>
-                  <SelectItem value="active">{t('users.filterActive')}</SelectItem>
-                  <SelectItem value="inactive">{t('users.filterInactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[220px]">
-              <Select value={orgFilter} onValueChange={setOrgFilter}>
-                <SelectTrigger className="text-left">
-                  <SelectValue placeholder={t('users.organization')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('users.filterOrg')}</SelectItem>
-                  {organizations?.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[180px]">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="text-left">
-                  <SelectValue placeholder={t('users.role')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('users.filterRole')}</SelectItem>
-                  {roles?.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      <span className="capitalize">{role.name}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(statusFilter !== 'all' || orgFilter !== 'all' || roleFilter !== 'all') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setStatusFilter('all');
-                  setOrgFilter('all');
-                  setRoleFilter('all');
-                }}
-              >
-                {t('users.resetFilters')}
-              </Button>
-            )}
-          </div>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -270,6 +203,38 @@ export function UsersPage() {
             searchKey="firstName"
             searchPlaceholder={t('users.searchPlaceholder')}
             isLoading={isLoading}
+            extraFilters={
+              <FilterBar
+                filters={[
+                  {
+                    key: 'status',
+                    label: t('common.status'),
+                    options: [
+                      { label: t('users.filterActive'), value: 'active' },
+                      { label: t('users.filterInactive'), value: 'inactive' },
+                    ],
+                    value: statusFilter,
+                    onChange: setStatusFilter,
+                  },
+                  {
+                    key: 'org',
+                    label: t('users.organization'),
+                    options: (organizations || []).map((org) => ({ label: org.name, value: org.id })),
+                    value: orgFilter,
+                    onChange: setOrgFilter,
+                  },
+                  {
+                    key: 'role',
+                    label: t('users.role'),
+                    options: (roles || []).map((role) => ({ label: role.name, value: role.name })),
+                    value: roleFilter,
+                    onChange: setRoleFilter,
+                  },
+                ]}
+                onReset={resetFilters}
+                hasActiveFilters={hasActiveFilters}
+              />
+            }
           />
           {error && (
             <div className="mt-4 p-4 text-center text-destructive bg-destructive/10 rounded-md">

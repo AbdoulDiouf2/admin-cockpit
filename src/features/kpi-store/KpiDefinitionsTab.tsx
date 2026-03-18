@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Plus, MoreHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   DropdownMenu,
@@ -22,7 +23,11 @@ import { useNavigate } from 'react-router-dom';
 import { CreateKpiDefinitionModal } from './CreateKpiDefinitionModal';
 import { EditKpiDefinitionModal } from './EditKpiDefinitionModal';
 
-export function KpiDefinitionsTab() {
+interface KpiDefinitionsTabProps {
+  onCreateClick?: () => void;
+}
+
+export function KpiDefinitionsTab({ onCreateClick }: KpiDefinitionsTabProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,8 +35,28 @@ export function KpiDefinitionsTab() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editKpi, setEditKpi] = useState<KpiDefinition | null>(null);
   const [toggleKpi, setToggleKpi] = useState<KpiDefinition | null>(null);
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const { data: kpis, isLoading } = useKpiDefinitions();
+
+  const categories = useMemo(() => {
+    if (!kpis) return [];
+    return [...new Set(kpis.map((k) => k.category).filter(Boolean))].sort();
+  }, [kpis]);
+
+  const filteredKpis = useMemo(() => {
+    if (!kpis) return [];
+    return kpis.filter((k) => {
+      if (filterCategory && k.category !== filterCategory) return false;
+      if (filterStatus === 'true' && !k.isActive) return false;
+      if (filterStatus === 'false' && k.isActive) return false;
+      return true;
+    });
+  }, [kpis, filterCategory, filterStatus]);
+
+  const hasActiveFilters = filterCategory !== '' || filterStatus !== '';
+  const resetFilters = () => { setFilterCategory(''); setFilterStatus(''); };
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => kpiDefinitionsApi.toggle(id),
@@ -145,19 +170,50 @@ export function KpiDefinitionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('kpiStore.createKpi')}
-        </Button>
-      </div>
+      {!onCreateClick && (
+        <div className="flex justify-end">
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('kpiStore.createKpi')}
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="h-[300px] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <DataTable columns={columns} data={kpis ?? []} searchKey="name" />
+        <DataTable
+          columns={columns}
+          data={filteredKpis}
+          searchKey="name"
+          extraFilters={
+            <FilterBar
+              filters={[
+                {
+                  key: 'category',
+                  label: t('kpiStore.kpiCategory'),
+                  options: categories.map((c) => ({ label: c, value: c })),
+                  value: filterCategory,
+                  onChange: setFilterCategory,
+                },
+                {
+                  key: 'status',
+                  label: t('common.status'),
+                  options: [
+                    { label: t('kpiStore.active'), value: 'true' },
+                    { label: t('kpiStore.inactive'), value: 'false' },
+                  ],
+                  value: filterStatus,
+                  onChange: setFilterStatus,
+                },
+              ]}
+              onReset={resetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          }
+        />
       )}
 
       <CreateKpiDefinitionModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />

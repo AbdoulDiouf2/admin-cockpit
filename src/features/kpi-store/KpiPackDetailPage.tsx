@@ -58,7 +58,7 @@ export function KpiPackDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
                 <p className="text-destructive font-medium">{t('common.error')}</p>
-                <Button onClick={() => navigate('/kpi-store')}>
+                <Button onClick={() => navigate(-1)}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     {t('common.back')}
                 </Button>
@@ -72,7 +72,7 @@ export function KpiPackDetailPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" onClick={() => navigate('/kpi-store')}>
+                    <Button variant="ghost" onClick={() => navigate(-1)}>
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         {t('common.back')}
                     </Button>

@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, Building2, Loader2, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
 import { EditOrganizationModal } from './EditOrganizationModal';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { useOrganizations } from '@/hooks/use-api';
 import { organizationsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
@@ -23,15 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-type StatusFilter = 'all' | 'active' | 'inactive';
 
 export function OrganizationsPage() {
   const { t } = useTranslation();
@@ -40,8 +32,31 @@ export function OrganizationsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editOrg, setEditOrg] = useState<Organization | null>(null);
   const [deleteOrg, setDeleteOrg] = useState<Organization | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterPlan, setFilterPlan] = useState('');
   const { data: organizations, isLoading, error } = useOrganizations();
+
+  const planOptions = useMemo(() => {
+    if (!organizations) return [];
+    const plans = [...new Set(organizations.map((o) => o.subscriptionPlan?.name).filter(Boolean))] as string[];
+    return plans.sort().map((p) => ({
+      label: organizations.find((o) => o.subscriptionPlan?.name === p)?.subscriptionPlan?.label || p,
+      value: p,
+    }));
+  }, [organizations]);
+
+  const filteredOrganizations = useMemo(() => {
+    if (!organizations) return [];
+    return organizations.filter((org) => {
+      if (filterStatus === 'active' && !org.ownerId) return false;
+      if (filterStatus === 'inactive' && !!org.ownerId) return false;
+      if (filterPlan && org.subscriptionPlan?.name !== filterPlan) return false;
+      return true;
+    });
+  }, [organizations, filterStatus, filterPlan]);
+
+  const hasActiveFilters = filterStatus !== '' || filterPlan !== '';
+  const resetFilters = () => { setFilterStatus(''); setFilterPlan(''); };
 
   const deleteMutation = useMutation({
     mutationFn: (orgId: string) => organizationsApi.delete(orgId),
@@ -60,12 +75,6 @@ export function OrganizationsPage() {
         variant: 'destructive',
       });
     },
-  });
-
-  const filteredOrganizations = (organizations || []).filter((org) => {
-    if (statusFilter === 'all') return true;
-    if (statusFilter === 'active') return !!org.ownerId;
-    return !org.ownerId;
   });
 
   const columns: ColumnDef<Organization>[] = [
@@ -166,28 +175,11 @@ export function OrganizationsPage() {
       {/* Organizations list */}
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                {t('organizations.listTitle')}
-              </CardTitle>
-              <CardDescription>{t('organizations.listSubtitle')}</CardDescription>
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('organizations.statusAll')}</SelectItem>
-                <SelectItem value="active">{t('organizations.statusActive')}</SelectItem>
-                <SelectItem value="inactive">{t('organizations.statusInactive')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            {t('organizations.listTitle')}
+          </CardTitle>
+          <CardDescription>{t('organizations.listSubtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -199,7 +191,36 @@ export function OrganizationsPage() {
               Erreur lors du chargement des organisations
             </div>
           ) : (
-            <DataTable columns={columns} data={filteredOrganizations} searchKey="name" />
+            <DataTable
+              columns={columns}
+              data={filteredOrganizations}
+              searchKey="name"
+              extraFilters={
+                <FilterBar
+                  filters={[
+                    {
+                      key: 'status',
+                      label: t('common.status'),
+                      options: [
+                        { label: t('organizations.statusActive'), value: 'active' },
+                        { label: t('organizations.statusInactive'), value: 'inactive' },
+                      ],
+                      value: filterStatus,
+                      onChange: setFilterStatus,
+                    },
+                    {
+                      key: 'plan',
+                      label: 'Plan',
+                      options: planOptions,
+                      value: filterPlan,
+                      onChange: setFilterPlan,
+                    },
+                  ]}
+                  onReset={resetFilters}
+                  hasActiveFilters={hasActiveFilters}
+                />
+              }
+            />
           )}
         </CardContent>
       </Card>

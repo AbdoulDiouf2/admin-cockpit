@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Brain } from 'lucide-react';
@@ -10,8 +9,9 @@ import { NlqSessionsTab } from './NlqSessionsTab';
 
 export function NlqStorePage() {
     const { t } = useTranslation();
-    const [searchParams] = useSearchParams();
-    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'intents');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'intents';
+    const handleTabChange = (tab: string) => setSearchParams({ tab }, { replace: true });
 
     return (
         <div className="space-y-6">
@@ -31,7 +31,7 @@ export function NlqStorePage() {
                     <CardDescription>{t('nlqStore.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange}>
                         <TabsList className="mb-6">
                             <TabsTrigger value="intents">{t('nlqStore.tabIntents')}</TabsTrigger>
                             <TabsTrigger value="templates">{t('nlqStore.tabTemplates')}</TabsTrigger>

@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
     searchKey?: string
     searchPlaceholder?: string
     isLoading?: boolean
+    extraFilters?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -45,6 +46,7 @@ export function DataTable<TData, TValue>({
     searchKey,
     searchPlaceholder,
     isLoading,
+    extraFilters,
 }: DataTableProps<TData, TValue>) {
     const { t } = useTranslation()
     const [sorting, setSorting] = React.useState<SortingState>([])
@@ -88,6 +90,7 @@ export function DataTable<TData, TValue>({
                             className="max-w-sm h-8"
                         />
                     )}
+                    {extraFilters}
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

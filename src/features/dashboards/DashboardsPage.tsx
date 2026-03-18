@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,6 +7,7 @@ import { MoreHorizontal, Eye, Trash2, Loader2, CheckCircle2, Circle } from 'luci
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { FilterBar } from '@/components/shared/FilterBar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,8 +30,38 @@ export function DashboardsPage() {
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [deleteDashboard, setDeleteDashboard] = useState<Dashboard | null>(null);
+    const [filterOrg, setFilterOrg] = useState('');
+    const [filterOwner, setFilterOwner] = useState('');
 
     const { data: dashboards, isLoading } = useAdminDashboards();
+
+    const orgOptions = useMemo(() => {
+        if (!dashboards) return [];
+        const orgs = [...new Map(
+            dashboards.filter((d) => d.organization).map((d) => [d.organization!.id, d.organization!.name])
+        ).entries()];
+        return orgs.sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ label: name, value: id }));
+    }, [dashboards]);
+
+    const ownerOptions = useMemo(() => {
+        if (!dashboards) return [];
+        const owners = [...new Map(
+            dashboards.filter((d) => d.user).map((d) => [d.user!.id, `${d.user!.firstName} ${d.user!.lastName}`])
+        ).entries()];
+        return owners.sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ label: name, value: id }));
+    }, [dashboards]);
+
+    const filteredDashboards = useMemo(() => {
+        if (!dashboards) return [];
+        return dashboards.filter((d) => {
+            if (filterOrg && d.organization?.id !== filterOrg) return false;
+            if (filterOwner && d.user?.id !== filterOwner) return false;
+            return true;
+        });
+    }, [dashboards, filterOrg, filterOwner]);
+
+    const hasActiveFilters = filterOrg !== '' || filterOwner !== '';
+    const resetFilters = () => { setFilterOrg(''); setFilterOwner(''); };
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => dashboardsApi.delete(id),
@@ -160,8 +191,30 @@ export function DashboardsPage() {
                 ) : (
                     <DataTable
                         columns={columns}
-                        data={dashboards ?? []}
+                        data={filteredDashboards}
                         searchKey="name"
+                        extraFilters={
+                            <FilterBar
+                                filters={[
+                                    {
+                                        key: 'org',
+                                        label: t('clientDashboards.columnOrg'),
+                                        options: orgOptions,
+                                        value: filterOrg,
+                                        onChange: setFilterOrg,
+                                    },
+                                    {
+                                        key: 'owner',
+                                        label: t('clientDashboards.columnOwner'),
+                                        options: ownerOptions,
+                                        value: filterOwner,
+                                        onChange: setFilterOwner,
+                                    },
+                                ]}
+                                onReset={resetFilters}
+                                hasActiveFilters={hasActiveFilters}
+                            />
+                        }
                     />
                 )}
             </div>

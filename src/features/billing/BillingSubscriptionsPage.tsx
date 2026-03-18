@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { useAdminBillingSubscriptions } from '@/hooks/use-api';
 import { BillingSubscription, BillingStatus, Organization } from '@/types';
 import { CreditCard, Users, TrendingUp, AlertTriangle, XCircle, Loader2, Clock } from 'lucide-react';
@@ -51,6 +53,8 @@ export function BillingSubscriptionsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, isLoading, error } = useAdminBillingSubscriptions();
+  const [filterPlan, setFilterPlan] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const subscriptions = data?.subscriptions ?? [];
   const unsubscribed = data?.unsubscribed ?? [];
@@ -61,6 +65,27 @@ export function BillingSubscriptionsPage() {
     ...subscriptions.map((s) => ({ org: s.organization!, sub: s })),
     ...unsubscribed.map((o) => ({ org: o, sub: null })),
   ];
+
+  const planOptions = useMemo(() => {
+    const plans = [...new Map(
+      subscriptions.filter((s) => s.plan).map((s) => [s.plan!.name, s.plan!.label])
+    ).entries()];
+    return plans.sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ label, value }));
+  }, [subscriptions]);
+
+  const filteredRows = useMemo(() => {
+    return allRows.filter((row) => {
+      if (filterPlan && row.sub?.plan?.name !== filterPlan) return false;
+      if (filterStatus) {
+        const rowStatus = row.sub?.status ?? 'NONE';
+        if (rowStatus !== filterStatus) return false;
+      }
+      return true;
+    });
+  }, [allRows, filterPlan, filterStatus]);
+
+  const hasActiveFilters = filterPlan !== '' || filterStatus !== '';
+  const resetFilters = () => { setFilterPlan(''); setFilterStatus(''); };
 
   const columns: ColumnDef<{ org: Organization; sub: BillingSubscription | null }>[] = [
     {
@@ -227,7 +252,40 @@ export function BillingSubscriptionsPage() {
           <CardDescription>{allRows.length} organisations</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={allRows} />
+          <DataTable
+            columns={columns}
+            data={filteredRows}
+            extraFilters={
+              <FilterBar
+                filters={[
+                  {
+                    key: 'plan',
+                    label: t('billingAdmin.columnPlan'),
+                    options: planOptions,
+                    value: filterPlan,
+                    onChange: setFilterPlan,
+                  },
+                  {
+                    key: 'status',
+                    label: t('billingAdmin.columnStatus'),
+                    options: [
+                      { label: t('billingAdmin.statusActive'), value: 'ACTIVE' },
+                      { label: t('billingAdmin.statusTrialing'), value: 'TRIALING' },
+                      { label: t('billingAdmin.statusPastDue'), value: 'PAST_DUE' },
+                      { label: t('billingAdmin.statusCancelled'), value: 'CANCELLED' },
+                      { label: t('billingAdmin.statusUnpaid'), value: 'UNPAID' },
+                      { label: t('billingAdmin.statusPaused'), value: 'PAUSED' },
+                      { label: t('billingAdmin.noSubscription'), value: 'NONE' },
+                    ],
+                    value: filterStatus,
+                    onChange: setFilterStatus,
+                  },
+                ]}
+                onReset={resetFilters}
+                hasActiveFilters={hasActiveFilters}
+              />
+            }
+          />
         </CardContent>
       </Card>
     </div>

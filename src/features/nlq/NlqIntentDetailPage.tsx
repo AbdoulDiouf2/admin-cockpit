@@ -31,7 +31,7 @@ export function NlqIntentDetailPage() {
         return (
             <div className="p-4 text-center">
                 <p className="text-destructive mb-4">Erreur lors de la récupération de l'intention NLQ.</p>
-                <Button onClick={() => navigate('/nlq-store')}>Retour au store</Button>
+                <Button onClick={() => navigate(-1)}>Retour au store</Button>
             </div>
         );
     }
@@ -39,7 +39,7 @@ export function NlqIntentDetailPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/nlq-store')}>
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>

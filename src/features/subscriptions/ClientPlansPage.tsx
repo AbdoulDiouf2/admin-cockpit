@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Loader2, MoreHorizontal, Users, BarChart3 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { useOrganizations } from '@/hooks/use-api';
 import { Organization } from '@/types';
 import { EditOrganizationModal } from '../organizations/EditOrganizationModal';
@@ -22,8 +23,32 @@ import { Badge } from '@/components/ui/badge';
 export function ClientPlansPage() {
     const { t } = useTranslation();
     const [editOrg, setEditOrg] = useState<Organization | null>(null);
+    const [filterPlan, setFilterPlan] = useState('');
+    const [filterFeature, setFilterFeature] = useState('');
 
     const { data: organizations, isLoading, error } = useOrganizations();
+
+    const planOptions = useMemo(() => {
+        if (!organizations) return [];
+        const plans = [...new Set(organizations.map((o) => o.subscriptionPlan?.name).filter(Boolean))] as string[];
+        return plans.sort().map((p) => ({
+            label: organizations.find((o) => o.subscriptionPlan?.name === p)?.subscriptionPlan?.label || p,
+            value: p,
+        }));
+    }, [organizations]);
+
+    const filteredOrganizations = useMemo(() => {
+        if (!organizations) return organizations ?? [];
+        return organizations.filter((org) => {
+            if (filterPlan && org.subscriptionPlan?.name !== filterPlan) return false;
+            if (filterFeature === 'nlq' && !org.subscriptionPlan?.hasNlq) return false;
+            if (filterFeature === 'reports' && !org.subscriptionPlan?.hasAdvancedReports) return false;
+            return true;
+        });
+    }, [organizations, filterPlan, filterFeature]);
+
+    const hasActiveFilters = filterPlan !== '' || filterFeature !== '';
+    const resetFilters = () => { setFilterPlan(''); setFilterFeature(''); };
 
     const columns: ColumnDef<Organization>[] = [
         {
@@ -202,7 +227,36 @@ export function ClientPlansPage() {
                             Erreur lors du chargement des plans clients
                         </div>
                     ) : (
-                        <DataTable columns={columns} data={organizations ?? []} searchKey="name" />
+                        <DataTable
+                            columns={columns}
+                            data={filteredOrganizations}
+                            searchKey="name"
+                            extraFilters={
+                                <FilterBar
+                                    filters={[
+                                        {
+                                            key: 'plan',
+                                            label: t('clientPlans.plan'),
+                                            options: planOptions,
+                                            value: filterPlan,
+                                            onChange: setFilterPlan,
+                                        },
+                                        {
+                                            key: 'feature',
+                                            label: t('clientPlans.features'),
+                                            options: [
+                                                { label: 'AI / NLQ', value: 'nlq' },
+                                                { label: 'Reports+', value: 'reports' },
+                                            ],
+                                            value: filterFeature,
+                                            onChange: setFilterFeature,
+                                        },
+                                    ]}
+                                    onReset={resetFilters}
+                                    hasActiveFilters={hasActiveFilters}
+                                />
+                            }
+                        />
                     )}
                 </CardContent>
             </Card>

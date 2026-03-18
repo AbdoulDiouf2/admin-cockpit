@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Plus, MoreHorizontal, Loader2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   DropdownMenu,
@@ -22,7 +23,11 @@ import type { WidgetTemplate } from '@/types';
 import { CreateWidgetTemplateModal } from './CreateWidgetTemplateModal';
 import { EditWidgetTemplateModal } from './EditWidgetTemplateModal';
 
-export function WidgetTemplatesTab() {
+interface WidgetTemplatesTabProps {
+  onCreateClick?: () => void;
+}
+
+export function WidgetTemplatesTab({ onCreateClick }: WidgetTemplatesTabProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,7 +36,23 @@ export function WidgetTemplatesTab() {
   const [editTemplate, setEditTemplate] = useState<WidgetTemplate | null>(null);
   const [toggleTemplate, setToggleTemplate] = useState<WidgetTemplate | null>(null);
 
+  const [filterVizType, setFilterVizType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   const { data: templates, isLoading } = useWidgetTemplates();
+
+  const filteredTemplates = useMemo(() => {
+    if (!templates) return [];
+    return templates.filter((tpl) => {
+      if (filterVizType && tpl.vizType !== filterVizType) return false;
+      if (filterStatus === 'true' && !tpl.isActive) return false;
+      if (filterStatus === 'false' && tpl.isActive) return false;
+      return true;
+    });
+  }, [templates, filterVizType, filterStatus]);
+
+  const hasActiveFilters = filterVizType !== '' || filterStatus !== '';
+  const resetFilters = () => { setFilterVizType(''); setFilterStatus(''); };
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => widgetTemplatesApi.toggle(id),
@@ -143,19 +164,50 @@ export function WidgetTemplatesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('kpiStore.createTemplate')}
-        </Button>
-      </div>
+      {!onCreateClick && (
+        <div className="flex justify-end">
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('kpiStore.createTemplate')}
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="h-[300px] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <DataTable columns={columns} data={templates ?? []} searchKey="name" />
+        <DataTable
+          columns={columns}
+          data={filteredTemplates}
+          searchKey="name"
+          extraFilters={
+            <FilterBar
+              filters={[
+                {
+                  key: 'vizType',
+                  label: t('kpiStore.templateVizType'),
+                  options: ['card', 'bar', 'line', 'gauge', 'table', 'pie'].map((v) => ({ label: v, value: v })),
+                  value: filterVizType,
+                  onChange: setFilterVizType,
+                },
+                {
+                  key: 'status',
+                  label: t('common.status'),
+                  options: [
+                    { label: t('kpiStore.active'), value: 'true' },
+                    { label: t('kpiStore.inactive'), value: 'false' },
+                  ],
+                  value: filterStatus,
+                  onChange: setFilterStatus,
+                },
+              ]}
+              onReset={resetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          }
+        />
       )}
 
       <CreateWidgetTemplateModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />

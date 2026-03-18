@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Cpu, Key, Loader2, Circle, MoreHorizontal, RefreshCw, ShieldOff, Zap, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAgents } from '@/hooks/use-api';
 import { Agent } from '@/types';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { GenerateTokenModal } from './GenerateTokenModal';
 import { RegenerateTokenModal } from './RegenerateTokenModal';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -32,7 +33,33 @@ export function AgentsPage() {
   const [revokeAgent, setRevokeAgent] = useState<Agent | null>(null);
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
 
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterOrg, setFilterOrg] = useState('');
+
   const { data: agents, isLoading, error, isFetching } = useAgents();
+
+  const orgOptions = useMemo(() => {
+    if (!agents) return [];
+    const orgs = [...new Map(
+      agents.filter((a) => a.organization).map((a) => [a.organization!.id, a.organization!.name])
+    ).entries()];
+    return orgs.sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ label: name, value: id }));
+  }, [agents]);
+
+  const filteredAgents = useMemo(() => {
+    if (!agents) return [];
+    return agents.filter((agent) => {
+      if (filterOrg && agent.organization?.id !== filterOrg) return false;
+      if (filterStatus === 'online' && (agent.status !== 'online' || agent.isRevoked)) return false;
+      if (filterStatus === 'offline' && agent.status !== 'offline') return false;
+      if (filterStatus === 'error' && agent.status !== 'error') return false;
+      if (filterStatus === 'revoked' && !agent.isRevoked) return false;
+      return true;
+    });
+  }, [agents, filterStatus, filterOrg]);
+
+  const hasActiveFilters = filterStatus !== '' || filterOrg !== '';
+  const resetFilters = () => { setFilterStatus(''); setFilterOrg(''); };
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => agentsApi.revokeToken(id),
@@ -133,6 +160,32 @@ export function AgentsPage() {
               Erreur lors du chargement des agents
             </div>
           ) : (
+            <div className="space-y-3">
+              <FilterBar
+                filters={[
+                  {
+                    key: 'status',
+                    label: t('common.status'),
+                    options: [
+                      { label: t('agents.online'), value: 'online' },
+                      { label: t('agents.offline'), value: 'offline' },
+                      { label: t('agents.error'), value: 'error' },
+                      { label: t('agents.revoked'), value: 'revoked' },
+                    ],
+                    value: filterStatus,
+                    onChange: setFilterStatus,
+                  },
+                  {
+                    key: 'org',
+                    label: 'Organisation',
+                    options: orgOptions,
+                    value: filterOrg,
+                    onChange: setFilterOrg,
+                  },
+                ]}
+                onReset={resetFilters}
+                hasActiveFilters={hasActiveFilters}
+              />
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -146,7 +199,7 @@ export function AgentsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {agents?.map((agent) => (
+                  {filteredAgents.map((agent) => (
                     <TableRow key={agent.id}>
                       <TableCell className="font-medium">
                         <Link
@@ -232,7 +285,7 @@ export function AgentsPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {agents?.length === 0 && (
+                  {filteredAgents.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center">
                         {t('common.noData')}
@@ -241,6 +294,7 @@ export function AgentsPage() {
                   )}
                 </TableBody>
               </Table>
+            </div>
             </div>
           )}
         </CardContent>
