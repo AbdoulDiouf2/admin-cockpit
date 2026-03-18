@@ -172,6 +172,7 @@ export function useDashboardStats() {
 export interface AuditLogFilters {
     userId?: string;
     event?: string;
+    events?: string[];
     startDate?: string;
     endDate?: string;
     limit?: number;

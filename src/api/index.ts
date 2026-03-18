@@ -232,11 +232,17 @@ export const auditLogsApi = {
   getAll: (params?: {
     userId?: string;
     event?: string;
+    events?: string[];
     startDate?: string;
     endDate?: string;
     limit?: number;
     offset?: number;
-  }) => api.get<PaginatedResponse<AuditLog>>('/logs/audit', { params }),
+  }) => {
+    const { events, ...rest } = params ?? {};
+    const queryParams: Record<string, unknown> = { ...rest };
+    if (events && events.length > 0) queryParams.events = events.join(',');
+    return api.get<PaginatedResponse<AuditLog>>('/logs/audit', { params: queryParams });
+  },
 
   getById: (id: string) =>
     api.get<AuditLog>(`/logs/audit/${id}`),
