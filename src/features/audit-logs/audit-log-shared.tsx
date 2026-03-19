@@ -111,6 +111,9 @@ export const EVENT_META: Record<string, { label: string; classes: string }> = {
   audit_logs_viewed:             { label: 'Logs consultés',            classes: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
   admin_users_listed:            { label: 'Users listés (admin)',      classes: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
   admin_organizations_listed:    { label: 'Orgs listées (admin)',      classes: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+
+  // Mailer
+  email_send_failed:             { label: 'Échec envoi email',         classes: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
 };
 
 // ─── EventBadge ───────────────────────────────────────────────────────────────

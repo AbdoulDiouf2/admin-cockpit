@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { User, Lock, Palette, Sun, Moon, Loader2, Bell } from 'lucide-react';
+import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -47,7 +47,7 @@ const passwordSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
-type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications';
+type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'shortcuts';
 
 // ─── Notification prefs ───────────────────────────────────────────────────────
 
@@ -75,7 +75,8 @@ const NAV_GROUPS = [
   {
     groupKey: 'settings.groupGeneral',
     items: [
-      { key: 'notifications' as SectionKey, icon: Bell, labelKey: 'settings.sectionNotifications' },
+      { key: 'notifications' as SectionKey, icon: Bell,     labelKey: 'settings.sectionNotifications' },
+      { key: 'shortcuts'     as SectionKey, icon: Keyboard, labelKey: 'settings.sectionShortcuts' },
     ],
   },
 ];
@@ -527,6 +528,96 @@ export function SettingsPage() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* ── Raccourcis clavier ── */}
+          {activeSection === 'shortcuts' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Keyboard className="h-5 w-5" />
+                  {t('settings.sectionShortcuts')}
+                </CardTitle>
+                <CardDescription>{t('settings.sectionShortcutsDesc')}</CardDescription>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6 space-y-6">
+
+                {/* Groupe Général */}
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    {t('settings.shortcutsGroupGeneral')}
+                  </p>
+                  <div className="divide-y divide-border/50">
+                    {[
+                      { keys: ['Ctrl', 'K'],         description: 'Recherche globale' },
+                      { keys: ['Ctrl', '\\'],        description: 'Réduire / étendre le sidebar' },
+                      { keys: ['Ctrl', 'Shift', 'L'], description: 'Basculer thème clair / sombre' },
+                      { keys: ['?'],                 description: 'Afficher les raccourcis clavier' },
+                    ].map(({ keys, description }) => (
+                      <div key={description} className="flex items-center justify-between py-2.5">
+                        <span className="text-sm text-muted-foreground">{description}</span>
+                        <div className="flex items-center gap-1">
+                          {keys.map((k, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              <kbd className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-mono font-medium text-foreground">
+                                {k}
+                              </kbd>
+                              {i < keys.length - 1 && (
+                                <span className="text-xs text-muted-foreground">+</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Groupe Navigation */}
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    {t('settings.shortcutsGroupNav')}
+                  </p>
+                  <div className="divide-y divide-border/50">
+                    {[
+                      { keys: ['G', 'D'], description: 'Tableau de bord' },
+                      { keys: ['G', 'O'], description: 'Organisations' },
+                      { keys: ['G', 'U'], description: 'Utilisateurs' },
+                      { keys: ['G', 'I'], description: 'Invitations' },
+                      { keys: ['G', 'R'], description: 'Rôles' },
+                      { keys: ['G', 'P'], description: "Plans d'abonnement" },
+                      { keys: ['G', 'C'], description: 'Plans Clients' },
+                      { keys: ['G', 'F'], description: 'Facturation' },
+                      { keys: ['G', 'T'], description: 'Dashboards Clients' },
+                      { keys: ['G', 'K'], description: 'KPI Store' },
+                      { keys: ['G', 'N'], description: 'NLQ Store' },
+                      { keys: ['G', 'A'], description: 'Agents' },
+                      { keys: ['G', 'L'], description: "Logs d'audit" },
+                      { keys: ['G', 'H'], description: 'Santé Système' },
+                      { keys: ['G', 'S'], description: 'Paramètres' },
+                    ].map(({ keys, description }) => (
+                      <div key={description} className="flex items-center justify-between py-2.5">
+                        <span className="text-sm text-muted-foreground">{description}</span>
+                        <div className="flex items-center gap-1">
+                          {keys.map((k, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              <kbd className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-mono font-medium text-foreground">
+                                {k}
+                              </kbd>
+                              {i < keys.length - 1 && (
+                                <span className="text-xs text-muted-foreground">puis</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
           )}
 
         </div>

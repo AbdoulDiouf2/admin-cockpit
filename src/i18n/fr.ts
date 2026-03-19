@@ -59,6 +59,7 @@ export const fr = {
     nlqStore: 'NLQ Store',
     clientDashboards: 'Dashboards Clients',
     billingSubscriptions: 'Facturation',
+    profile: 'Mon profil',
   },
   clientDashboards: {
     title: 'Dashboards Clients',
@@ -465,6 +466,10 @@ export const fr = {
     theme: 'Thème',
     darkMode: 'Mode sombre',
     lightMode: 'Mode clair',
+    sectionShortcuts: 'Raccourcis clavier',
+    sectionShortcutsDesc: 'Tous les raccourcis disponibles dans le cockpit',
+    shortcutsGroupGeneral: 'Général',
+    shortcutsGroupNav: 'Navigation — G puis...',
     sectionNotifications: 'Notifications',
     sectionNotificationsDesc: 'Alertes email reçues par le SuperAdmin',
     notifNewOrg: 'Nouvelle organisation inscrite',

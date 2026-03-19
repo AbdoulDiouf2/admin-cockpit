@@ -40,7 +40,6 @@ const navItems = [
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
   { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
   { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },
-  { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
@@ -62,14 +61,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <aside
         className={cn(
           'fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300',
-          collapsed ? 'w-[70px]' : 'w-[260px]',
+          collapsed ? 'w-[70px]' : 'w-[220px]',
           collapsed ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'
         )}
         data-testid="sidebar"
       >
         {/* Logo */}
         <div className="flex items-center h-20 px-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3 overflow-hidden w-full">
+          <div className={cn('flex items-center gap-3 overflow-hidden w-full', collapsed && 'justify-center')}>
             <img
               src="/Logo-cockpit.jpeg"
               alt="Cockpit Logo"
@@ -99,8 +98,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                       'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                      collapsed ? 'justify-center px-0' : 'px-3',
                       isActive
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground'
@@ -117,6 +117,27 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             })}
           </ul>
         </nav>
+
+        <Separator className="bg-sidebar-border" />
+
+        {/* Settings */}
+        <div className="px-3 py-2">
+          <NavLink
+            to="/settings"
+            className={cn(
+              'flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+              collapsed ? 'justify-center px-0' : 'px-3',
+              location.pathname === '/settings'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground'
+            )}
+            data-testid="nav-settings"
+          >
+            <Settings className="h-5 w-5 shrink-0" />
+            {!collapsed && <span className="truncate">{t('nav.settings')}</span>}
+          </NavLink>
+        </div>
 
         <Separator className="bg-sidebar-border" />
 
