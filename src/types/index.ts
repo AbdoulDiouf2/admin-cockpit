@@ -307,6 +307,46 @@ export interface BillingSubscriptionDetailResponse {
   hasSubscription: boolean;
 }
 
+// Onboarding Overview types
+export interface OnboardingOrgRow {
+  organizationId: string;
+  organizationName: string;
+  sector?: string;
+  country?: string;
+  plan: { name: string; label: string } | null;
+  owner: { email: string; firstName?: string; lastName?: string } | null;
+  userCount: number;
+  createdAt: string;
+  onboarding: {
+    currentStep: number;
+    completedSteps: number[];
+    isComplete: boolean;
+    inviteLater: boolean;
+    updatedAt: string;
+    daysSinceUpdate: number;
+    isStuck: boolean;
+  } | null;
+  agent: {
+    id: string;
+    name: string;
+    status: string;
+    lastSeen?: string;
+    tokenExpiresAt?: string;
+  } | null;
+}
+
+export interface OnboardingOverviewResponse {
+  summary: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    stuck: number;
+    withAgentOnline: number;
+  };
+  organizations: OnboardingOrgRow[];
+}
+
 // API Response types
 export interface PaginatedResponse<T> {
   data: T[];

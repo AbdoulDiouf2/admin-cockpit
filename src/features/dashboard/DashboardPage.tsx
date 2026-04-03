@@ -131,7 +131,9 @@ export function DashboardPage() {
       label: t('dashboard.errorAgents'),
       value: statsData?.errorAgents?.value || 0,
       icon: AlertTriangle,
-      trend: statsData?.errorAgents?.trend || '0',
+      trend: (statsData?.errorAgents?.expiredTokens ?? 0) > 0
+        ? `${statsData.errorAgents.expiredTokens} token(s) expiré(s)`
+        : statsData?.errorAgents?.trend || '0',
       color: 'text-red-500',
       bg: 'bg-red-500/10',
       href: '/agents',

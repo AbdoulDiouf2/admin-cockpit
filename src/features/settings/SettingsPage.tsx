@@ -54,6 +54,7 @@ type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'sho
 const DEFAULT_NOTIF = {
   newOrg: true,
   agentOffline: true,
+  agentTokenExpiry: true,
   paymentFailed: true,
   paymentSuccess: false,
   errorLogs: true,
@@ -376,8 +377,9 @@ export function SettingsPage() {
                 <CardContent className="pt-2 divide-y divide-border">
                   {([
                     { key: 'newOrg',         labelKey: 'settings.notifNewOrg',         descKey: 'settings.notifNewOrgDesc' },
-                    { key: 'agentOffline',   labelKey: 'settings.notifAgentOffline',   descKey: 'settings.notifAgentOfflineDesc' },
-                    { key: 'paymentFailed',  labelKey: 'settings.notifPaymentFailed',  descKey: 'settings.notifPaymentFailedDesc' },
+                    { key: 'agentOffline',     labelKey: 'settings.notifAgentOffline',     descKey: 'settings.notifAgentOfflineDesc' },
+                    { key: 'agentTokenExpiry', labelKey: 'settings.notifAgentTokenExpiry', descKey: 'settings.notifAgentTokenExpiryDesc' },
+                    { key: 'paymentFailed',    labelKey: 'settings.notifPaymentFailed',    descKey: 'settings.notifPaymentFailedDesc' },
                     { key: 'paymentSuccess', labelKey: 'settings.notifPaymentSuccess', descKey: 'settings.notifPaymentSuccessDesc' },
                     { key: 'errorLogs',      labelKey: 'settings.notifErrorLogs',      descKey: 'settings.notifErrorLogsDesc' },
                   ] as { key: keyof NotifPrefs; labelKey: string; descKey: string }[]).map(({ key, labelKey, descKey }) => (

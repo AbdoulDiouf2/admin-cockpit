@@ -16,6 +16,7 @@ import {
   Calendar,
   Brain,
   Settings,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +38,7 @@ const navItems = [
   { path: '/dashboards', icon: LayoutDashboard, labelKey: 'nav.clientDashboards' },
   { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
   { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
+  { path: '/onboarding', icon: ListChecks, labelKey: 'nav.onboarding' },
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
   { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
   { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },

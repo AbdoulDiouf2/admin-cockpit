@@ -35,6 +35,7 @@ import { NlqStorePage } from './features/nlq/NlqStorePage';
 import { NlqIntentDetailPage } from './features/nlq/NlqIntentDetailPage';
 import { NlqTemplateDetailPage } from './features/nlq/NlqTemplateDetailPage';
 import { NlqSessionDetailPage } from './features/nlq/NlqSessionDetailPage';
+import { OnboardingPage } from './features/onboarding/OnboardingPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -95,6 +96,7 @@ export default function App() {
                 <Route path="/nlq-store/intents/:id" element={<NlqIntentDetailPage />} />
                 <Route path="/nlq-store/templates/:id" element={<NlqTemplateDetailPage />} />
                 <Route path="/nlq-store/sessions/:id" element={<NlqSessionDetailPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
               </Routes>
             </MainLayout>
           </ProtectedRoute>

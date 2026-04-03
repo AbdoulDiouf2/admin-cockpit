@@ -18,6 +18,7 @@ import type {
   Dashboard,
   BillingSubscriptionsResponse,
   BillingSubscriptionDetailResponse,
+  OnboardingOverviewResponse,
 } from '@/types';
 
 // Auth
@@ -304,6 +305,12 @@ export const systemConfigApi = {
 
   update: (data: { notificationPreferences: Record<string, unknown> }) =>
     api.patch<{ notificationPreferences: Record<string, unknown> | null }>('/admin/system-config', data),
+};
+
+// Onboarding Overview
+export const onboardingApi = {
+  getOverview: () =>
+    api.get<OnboardingOverviewResponse>('/admin/onboarding'),
 };
 
 // Dashboards

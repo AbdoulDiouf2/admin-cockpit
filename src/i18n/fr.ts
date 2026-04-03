@@ -59,6 +59,7 @@ export const fr = {
     nlqStore: 'NLQ Store',
     clientDashboards: 'Dashboards Clients',
     billingSubscriptions: 'Facturation',
+    onboarding: 'Suivi Onboarding',
     profile: 'Mon profil',
   },
   clientDashboards: {
@@ -476,6 +477,8 @@ export const fr = {
     notifNewOrgDesc: 'Recevoir un email quand un client crée un compte',
     notifAgentOffline: 'Agent hors ligne',
     notifAgentOfflineDesc: "Recevoir un email quand un agent ne répond plus",
+    notifAgentTokenExpiry: 'Expiration imminente du token agent',
+    notifAgentTokenExpiryDesc: "Recevoir un email à J-7, J-3 et J-1 avant l'expiration d'un token agent",
     notifPaymentFailed: 'Paiement échoué',
     notifPaymentFailedDesc: "Recevoir un email en cas d'échec de paiement",
     notifPaymentSuccess: 'Paiement réussi',

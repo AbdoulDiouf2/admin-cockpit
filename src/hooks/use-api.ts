@@ -13,6 +13,7 @@ import {
     nlqApi,
     dashboardsApi,
     billingAdminApi,
+    onboardingApi,
 } from '@/api';
 import { Agent } from '@/types';
 
@@ -386,5 +387,15 @@ export function useAdminBillingSubscription(orgId: string) {
             return resp.data;
         },
         enabled: !!orgId,
+    });
+}
+
+export function useOnboardingOverview() {
+    return useQuery({
+        queryKey: ['onboarding-overview'],
+        queryFn: async () => {
+            const resp = await onboardingApi.getOverview();
+            return resp.data;
+        },
     });
 }
