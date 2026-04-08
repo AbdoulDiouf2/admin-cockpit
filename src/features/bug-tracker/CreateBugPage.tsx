@@ -171,7 +171,7 @@ export function CreateBugPage() {
     mutationFn: (values: BugFormValues) => {
       const payload = {
         ...values,
-        organizationId: values.organizationId === 'none' ? undefined : values.organizationId,
+        organizationId: (values.organizationId === 'none' || !values.organizationId) ? undefined : values.organizationId,
         steps_to_reproduce: values.steps_to_reproduce.map(s => s.value).filter(Boolean),
         notify_emails: values.notify_emails ? values.notify_emails.split(',').map(e => e.trim()) : [],
         attachments: attachments,
