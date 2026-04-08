@@ -158,6 +158,8 @@ admin-cockpit/
 | `/audit-logs` | Historique des actions (filtres par utilisateur, événement, date) |
 | `/health` | Health check du backend |
 | `/profile` | Profil de l'utilisateur courant |
+| `/bug-tracker` | Bug Tracker interne (Admin) |
+| `/bug-tracker/create` | Formulaire de signalement avancé |
 
 ## Stack technique
 
@@ -248,6 +250,13 @@ GET  /api/agents/:id                     # Détail d'un agent
 POST /api/agents/generate-token          # Générer un token agent
 POST /api/agents/:id/regenerate-token    # Regénérer le token
 POST /api/agents/:id/revoke              # Révoquer le token
+```
+
+### Bug Tracker (Ticketing)
+```
+POST /api/v1/bugs                         # Créer un ticket
+POST /api/v1/bugs/upload                  # Upload temporaire (temp/)
+GET  /api/v1/bugs                         # Liste des bugs (admin)
 ```
 
 ## Développement

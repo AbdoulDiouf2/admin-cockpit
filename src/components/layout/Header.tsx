@@ -27,7 +27,7 @@ import {
 import { getInitials } from '@/lib/utils';
 
 // Ordered from most specific to least specific
-const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string }[] = [
+const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string; subKey?: string }[] = [
   { pattern: /^\/organizations\/[^/]+/, key: 'nav.organizations', parentPath: '/organizations' },
   { pattern: /^\/organizations/, key: 'nav.organizations' },
   { pattern: /^\/users\/[^/]+/, key: 'nav.users', parentPath: '/users' },
@@ -49,6 +49,9 @@ const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string }[] = 
   { pattern: /^\/nlq-store\/templates\/[^/]+/, key: 'nav.nlqStore', parentPath: '/nlq-store' },
   { pattern: /^\/nlq-store\/sessions\/[^/]+/, key: 'nav.nlqStore', parentPath: '/nlq-store' },
   { pattern: /^\/nlq-store/, key: 'nav.nlqStore' },
+  { pattern: /^\/bug-tracker\/new/, key: 'nav.bugTracker', parentPath: '/bug-tracker', subKey: 'bugTracker.newBug' },
+  { pattern: /^\/bug-tracker\/[^/]+/, key: 'nav.bugTracker', parentPath: '/bug-tracker', subKey: 'bugTracker.detailsTitle' },
+  { pattern: /^\/bug-tracker/, key: 'nav.bugTracker' },
   { pattern: /^\/agents\/[^/]+/, key: 'nav.agents', parentPath: '/agents' },
   { pattern: /^\/agents/, key: 'nav.agents' },
   { pattern: /^\/audit-logs\/[^/]+/, key: 'nav.auditLogs', parentPath: '/audit-logs' },
@@ -64,8 +67,12 @@ function usePageTitle() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const match = PAGE_TITLE_MAP.find(({ pattern }) => pattern.test(pathname));
-  if (!match) return { title: '', parentPath: undefined };
-  return { title: t(match.key), parentPath: match.parentPath };
+  if (!match) return { title: '', parentPath: undefined, subTitle: undefined };
+  return { 
+    title: t(match.key), 
+    parentPath: match.parentPath, 
+    subTitle: match.subKey ? t(match.subKey) : undefined 
+  };
 }
 
 interface HeaderProps {
@@ -78,7 +85,7 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { title, parentPath } = usePageTitle();
+  const { title, parentPath, subTitle } = usePageTitle();
 
   const currentLang = i18n.language;
 
@@ -130,7 +137,7 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
                       {title}
                     </NavLink>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                    <span className="font-semibold text-foreground">Détail</span>
+                    <span className="font-semibold text-foreground">{subTitle || 'Détail'}</span>
                   </>
                 ) : (
                   <span className="font-semibold text-foreground">{title}</span>

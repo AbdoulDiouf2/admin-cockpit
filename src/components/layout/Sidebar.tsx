@@ -17,6 +17,7 @@ import {
   Brain,
   Settings,
   ListChecks,
+  Bug,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +40,7 @@ const navItems = [
   { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
   { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
   { path: '/onboarding', icon: ListChecks, labelKey: 'nav.onboarding' },
+  { path: '/bug-tracker', icon: Bug, labelKey: 'bugTracker.title' },
   { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
   { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
   { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },

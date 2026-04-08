@@ -36,6 +36,9 @@ import { NlqIntentDetailPage } from './features/nlq/NlqIntentDetailPage';
 import { NlqTemplateDetailPage } from './features/nlq/NlqTemplateDetailPage';
 import { NlqSessionDetailPage } from './features/nlq/NlqSessionDetailPage';
 import { OnboardingPage } from './features/onboarding/OnboardingPage';
+import { BugTrackerPage } from './features/bug-tracker/BugTrackerPage';
+import { CreateBugPage } from './features/bug-tracker/CreateBugPage';
+import { BugDetailPage } from './features/bug-tracker/BugDetailPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -97,6 +100,9 @@ export default function App() {
                 <Route path="/nlq-store/templates/:id" element={<NlqTemplateDetailPage />} />
                 <Route path="/nlq-store/sessions/:id" element={<NlqSessionDetailPage />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/bug-tracker" element={<BugTrackerPage />} />
+                <Route path="/bug-tracker/new" element={<CreateBugPage />} />
+                <Route path="/bug-tracker/:id" element={<BugDetailPage />} />
               </Routes>
             </MainLayout>
           </ProtectedRoute>
