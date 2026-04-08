@@ -1,6 +1,9 @@
+import * as React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { bugTrackerApi } from '@/features/bug-tracker/services/bugTrackerApi';
 import {
   LayoutDashboard,
   Building2,
@@ -80,6 +83,18 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
 
+  const { data: stats } = useQuery({
+    queryKey: ['bugs-stats'],
+    queryFn: () => bugTrackerApi.getStats(),
+    refetchInterval: 30000, // Refresh every 30s
+  });
+
+  const unresolvedCount = React.useMemo(() => {
+    if (!stats?.byStatus) return 0;
+    const { nouveau = 0, en_analyse = 0, en_cours = 0, en_test = 0 } = stats.byStatus;
+    return nouveau + en_analyse + en_cours + en_test;
+  }, [stats]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -134,13 +149,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   {category.items.map((item) => {
                     const isActive = location.pathname === item.path;
                     const Icon = item.icon;
+                    const isBugTracker = item.path === '/bug-tracker';
+                    const showBadge = isBugTracker && unresolvedCount > 0;
 
                     return (
                       <li key={item.path}>
                         <NavLink
                           to={item.path}
                           className={cn(
-                            'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group',
+                            'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative',
                             'hover:bg-sidebar-accent hover:text-sidebar-foreground',
                             collapsed ? 'justify-center px-0' : 'px-3',
                             isActive
@@ -154,7 +171,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             isActive && "text-primary"
                           )} />
                           {!collapsed && (
-                            <span className="truncate">{t(item.labelKey)}</span>
+                            <span className="flex-1 truncate">{t(item.labelKey)}</span>
+                          )}
+                          
+                          {/* Badge */}
+                          {showBadge && (
+                            <span className={cn(
+                              "flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 animate-in zoom-in-50",
+                              collapsed ? "absolute top-1 right-2 scale-75" : "ml-auto"
+                            )}>
+                              {unresolvedCount > 99 ? '99+' : unresolvedCount}
+                            </span>
                           )}
                         </NavLink>
                       </li>
