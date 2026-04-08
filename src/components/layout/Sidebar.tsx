@@ -27,23 +27,53 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-  { path: '/organizations', icon: Building2, labelKey: 'nav.organizations' },
-  { path: '/users', icon: Users, labelKey: 'nav.users' },
-  { path: '/invitations', icon: Calendar, labelKey: 'nav.invitations' },
-  { path: '/roles', icon: Shield, labelKey: 'nav.roles' },
-  { path: '/subscription-plans', icon: CreditCard, labelKey: 'nav.subscriptionPlans' },
-  { path: '/client-plans', icon: CreditCard, labelKey: 'nav.clientPlans' },
-  { path: '/billing-subscriptions', icon: CreditCard, labelKey: 'nav.billingSubscriptions' },
-  { path: '/dashboards', icon: LayoutDashboard, labelKey: 'nav.clientDashboards' },
-  { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
-  { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
-  { path: '/onboarding', icon: ListChecks, labelKey: 'nav.onboarding' },
-  { path: '/bug-tracker', icon: Bug, labelKey: 'bugTracker.title' },
-  { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
-  { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
-  { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },
+const navCategories = [
+  {
+    titleKey: 'nav.category.general',
+    items: [
+      { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+    ]
+  },
+  {
+    titleKey: 'nav.category.organization',
+    items: [
+      { path: '/organizations', icon: Building2, labelKey: 'nav.organizations' },
+      { path: '/users', icon: Users, labelKey: 'nav.users' },
+      { path: '/invitations', icon: Calendar, labelKey: 'nav.invitations' },
+      { path: '/roles', icon: Shield, labelKey: 'nav.roles' },
+    ]
+  },
+  {
+    titleKey: 'nav.category.billing',
+    items: [
+      { path: '/subscription-plans', icon: CreditCard, labelKey: 'nav.subscriptionPlans' },
+      { path: '/client-plans', icon: CreditCard, labelKey: 'nav.clientPlans' },
+      { path: '/billing-subscriptions', icon: CreditCard, labelKey: 'nav.billingSubscriptions' },
+    ]
+  },
+  {
+    titleKey: 'nav.category.bi',
+    items: [
+      { path: '/dashboards', icon: LayoutDashboard, labelKey: 'nav.clientDashboards' },
+      { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
+      { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
+    ]
+  },
+  {
+    titleKey: 'nav.category.operations',
+    items: [
+      { path: '/onboarding', icon: ListChecks, labelKey: 'nav.onboarding' },
+      { path: '/bug-tracker', icon: Bug, labelKey: 'bugTracker.title' },
+    ]
+  },
+  {
+    titleKey: 'nav.category.system',
+    items: [
+      { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
+      { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
+      { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },
+    ]
+  },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
@@ -91,54 +121,71 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
-          <ul className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+          <div className="space-y-6">
+            {navCategories.map((category, idx) => (
+              <div key={idx} className="space-y-1">
+                {!collapsed && (
+                  <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 opacity-50">
+                    {t(category.titleKey)}
+                  </h3>
+                )}
+                <ul className="space-y-1">
+                  {category.items.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    const Icon = item.icon;
 
-              return (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                      'hover:bg-sidebar-accent hover:text-sidebar-foreground',
-                      collapsed ? 'justify-center px-0' : 'px-3',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground'
-                    )}
-                    data-testid={`nav-${item.path.slice(1)}`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    {!collapsed && (
-                      <span className="truncate">{t(item.labelKey)}</span>
-                    )}
-                  </NavLink>
-                </li>
-              );
-            })}
-          </ul>
+                    return (
+                      <li key={item.path}>
+                        <NavLink
+                          to={item.path}
+                          className={cn(
+                            'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group',
+                            'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                            collapsed ? 'justify-center px-0' : 'px-3',
+                            isActive
+                              ? 'bg-primary/10 text-primary shadow-sm'
+                              : 'text-muted-foreground'
+                          )}
+                          data-testid={`nav-${item.path.slice(1)}`}
+                        >
+                          <Icon className={cn(
+                            "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                            isActive && "text-primary"
+                          )} />
+                          {!collapsed && (
+                            <span className="truncate">{t(item.labelKey)}</span>
+                          )}
+                        </NavLink>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         </nav>
 
-        <Separator className="bg-sidebar-border" />
+        <Separator className="bg-sidebar-border opacity-50" />
 
         {/* Settings */}
         <div className="px-3 py-2">
           <NavLink
             to="/settings"
             className={cn(
-              'flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group',
               'hover:bg-sidebar-accent hover:text-sidebar-foreground',
               collapsed ? 'justify-center px-0' : 'px-3',
               location.pathname === '/settings'
-                ? 'bg-primary/10 text-primary'
+                ? 'bg-primary/10 text-primary shadow-sm'
                 : 'text-muted-foreground'
             )}
             data-testid="nav-settings"
           >
-            <Settings className="h-5 w-5 shrink-0" />
+            <Settings className={cn(
+              "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:rotate-45",
+              location.pathname === '/settings' && "text-primary"
+            )} />
             {!collapsed && <span className="truncate">{t('nav.settings')}</span>}
           </NavLink>
         </div>

@@ -62,6 +62,14 @@ export const en = {
     onboarding: 'Onboarding',
     profile: 'My Profile',
     bugTracker: 'Bug Tracker',
+    category: {
+      general: 'General',
+      organization: 'Organization',
+      billing: 'Billing',
+      bi: 'Business Intelligence',
+      operations: 'Operations',
+      system: 'System',
+    },
   },
   dashboard: {
     title: 'Dashboard',

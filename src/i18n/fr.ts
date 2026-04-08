@@ -62,6 +62,14 @@ export const fr = {
     onboarding: 'Suivi Onboarding',
     profile: 'Mon profil',
     bugTracker: 'Bug Tracker',
+    category: {
+      general: 'Général',
+      organization: 'Organisation',
+      billing: 'Abonnements',
+      bi: 'Business Intelligence',
+      operations: 'Opérations',
+      system: 'Système',
+    },
   },
   clientDashboards: {
     title: 'Dashboards Clients',
