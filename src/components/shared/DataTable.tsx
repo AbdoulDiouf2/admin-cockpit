@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChevronLeft, ChevronRight, Settings2 } from "lucide-react"
 import { useTranslation } from 'react-i18next'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -57,6 +64,8 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
+    const [pageIndex, setPageIndex] = React.useState(0)
+    const [pageSize, setPageSize] = React.useState(10)
 
     const table = useReactTable({
         data,
@@ -76,6 +85,14 @@ export function DataTable<TData, TValue>({
             globalFilter,
             columnVisibility,
             rowSelection,
+            pagination: { pageIndex, pageSize },
+        },
+        onPaginationChange: (updater) => {
+            const next = typeof updater === 'function'
+                ? updater({ pageIndex, pageSize })
+                : updater;
+            setPageIndex(next.pageIndex);
+            setPageSize(next.pageSize);
         },
     })
 
@@ -191,12 +208,34 @@ export function DataTable<TData, TValue>({
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {t('dataTable.rowsDisplayed', {
-                        count: table.getRowModel().rows.length,
-                        total: table.getFilteredRowModel().rows.length
-                    })}
+            <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>
+                        {t('dataTable.rowsDisplayed', {
+                            count: table.getRowModel().rows.length,
+                            total: table.getFilteredRowModel().rows.length
+                        })}
+                    </span>
+                    <span className="text-muted-foreground/50">·</span>
+                    <span>{t('dataTable.rowsPerPage') || 'Lignes par page'}</span>
+                    <Select
+                        value={String(pageSize)}
+                        onValueChange={(val) => {
+                            setPageSize(Number(val));
+                            setPageIndex(0);
+                        }}
+                    >
+                        <SelectTrigger className="h-7 w-[70px] text-xs">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[10, 25, 50, 100].map((size) => (
+                                <SelectItem key={size} value={String(size)} className="text-xs">
+                                    {size}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-x-2">
                     <Button

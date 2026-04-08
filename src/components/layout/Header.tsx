@@ -45,6 +45,8 @@ const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string; subKe
   { pattern: /^\/kpi-store\/definitions\/[^/]+/, key: 'nav.kpiStore', parentPath: '/kpi-store' },
   { pattern: /^\/kpi-store\/packs\/[^/]+/, key: 'nav.kpiStore', parentPath: '/kpi-store' },
   { pattern: /^\/kpi-store/, key: 'nav.kpiStore' },
+  { pattern: /^\/kpi-health\/[^/]+/, key: 'nav.kpiHealth', parentPath: '/kpi-health', subKey: 'kpiHealth.detailBreadcrumb' },
+  { pattern: /^\/kpi-health/, key: 'nav.kpiHealth' },
   { pattern: /^\/nlq-store\/intents\/[^/]+/, key: 'nav.nlqStore', parentPath: '/nlq-store' },
   { pattern: /^\/nlq-store\/templates\/[^/]+/, key: 'nav.nlqStore', parentPath: '/nlq-store' },
   { pattern: /^\/nlq-store\/sessions\/[^/]+/, key: 'nav.nlqStore', parentPath: '/nlq-store' },

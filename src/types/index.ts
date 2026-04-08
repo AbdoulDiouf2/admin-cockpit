@@ -347,6 +347,42 @@ export interface OnboardingOverviewResponse {
   organizations: OnboardingOrgRow[];
 }
 
+export interface KpiHealthStat {
+  id: string;
+  key: string;
+  name: string;
+  category: string;
+  successRate: number | null;
+  activeOrganizations: number;
+  lastError: string | null;
+  status: 'Healthy' | 'Warning' | 'Error' | 'Unknown';
+  totalJobs: number;
+}
+
+export interface KpiHealthSession {
+  id: string;
+  createdAt: string;
+  organization: { id: string; name: string } | null;
+  user: { id: string; email: string; firstName: string | null; lastName: string | null } | null;
+  jobStatus: 'COMPLETED' | 'FAILED' | 'PENDING' | 'RUNNING' | 'NO_JOB';
+  errorMessage: string | null;
+  latencyMs: number | null;
+  completedAt: string | null;
+}
+
+export interface KpiHealthDetail {
+  kpi: KpiDefinition;
+  health: {
+    successRate: number | null;
+    activeOrganizations: number;
+    lastError: string | null;
+    status: 'Healthy' | 'Warning' | 'Error' | 'Unknown';
+    totalJobs: number;
+    completedJobs: number;
+  };
+  sessions: KpiHealthSession[];
+}
+
 // API Response types
 export interface PaginatedResponse<T> {
   data: T[];

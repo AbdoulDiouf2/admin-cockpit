@@ -14,6 +14,7 @@ import {
     dashboardsApi,
     billingAdminApi,
     onboardingApi,
+    kpiHealthApi,
 } from '@/api';
 import { Agent } from '@/types';
 
@@ -397,5 +398,28 @@ export function useOnboardingOverview() {
             const resp = await onboardingApi.getOverview();
             return resp.data;
         },
+    });
+}
+
+export function useKpiHealth() {
+    return useQuery({
+        queryKey: ['kpi-health'],
+        queryFn: async () => {
+            const resp = await kpiHealthApi.getStats();
+            return resp.data;
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+}
+
+export function useKpiHealthDetail(id: string) {
+    return useQuery({
+        queryKey: ['kpi-health', id],
+        queryFn: async () => {
+            const resp = await kpiHealthApi.getDetail(id);
+            return resp.data;
+        },
+        enabled: !!id,
+        staleTime: 2 * 60 * 1000,
     });
 }

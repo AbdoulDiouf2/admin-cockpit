@@ -21,6 +21,7 @@ import {
   Settings,
   ListChecks,
   Bug,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -59,6 +60,7 @@ const navCategories = [
     items: [
       { path: '/dashboards', icon: LayoutDashboard, labelKey: 'nav.clientDashboards' },
       { path: '/kpi-store', icon: BarChart3, labelKey: 'nav.kpiStore' },
+      { path: '/kpi-health', icon: Activity, labelKey: 'nav.kpiHealth' },
       { path: '/nlq-store', icon: Brain, labelKey: 'nav.nlqStore' },
     ]
   },

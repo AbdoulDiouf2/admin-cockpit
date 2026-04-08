@@ -19,6 +19,8 @@ import type {
   BillingSubscriptionsResponse,
   BillingSubscriptionDetailResponse,
   OnboardingOverviewResponse,
+  KpiHealthStat,
+  KpiHealthDetail,
 } from '@/types';
 
 // Auth
@@ -311,6 +313,15 @@ export const systemConfigApi = {
 export const onboardingApi = {
   getOverview: () =>
     api.get<OnboardingOverviewResponse>('/admin/onboarding'),
+};
+
+// KPI Health
+export const kpiHealthApi = {
+  getStats: () =>
+    api.get<KpiHealthStat[]>('/admin/kpi-health'),
+
+  getDetail: (id: string) =>
+    api.get<KpiHealthDetail>(`/admin/kpi-health/${id}`),
 };
 
 // Dashboards

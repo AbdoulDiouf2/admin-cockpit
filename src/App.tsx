@@ -31,6 +31,8 @@ import { KpiStorePage } from './features/kpi-store/KpiStorePage';
 import { WidgetTemplateDetailPage } from './features/kpi-store/WidgetTemplateDetailPage';
 import { KpiDefinitionDetailPage } from './features/kpi-store/KpiDefinitionDetailPage';
 import { KpiPackDetailPage } from './features/kpi-store/KpiPackDetailPage';
+import { KpiHealthPage } from './features/kpi-store/KpiHealthPage';
+import { KpiHealthDetailPage } from './features/kpi-store/KpiHealthDetailPage';
 import { NlqStorePage } from './features/nlq/NlqStorePage';
 import { NlqIntentDetailPage } from './features/nlq/NlqIntentDetailPage';
 import { NlqTemplateDetailPage } from './features/nlq/NlqTemplateDetailPage';
@@ -95,6 +97,8 @@ export default function App() {
                 <Route path="/kpi-store/widget-templates/:id" element={<WidgetTemplateDetailPage />} />
                 <Route path="/kpi-store/definitions/:id" element={<KpiDefinitionDetailPage />} />
                 <Route path="/kpi-store/packs/:id" element={<KpiPackDetailPage />} />
+                <Route path="/kpi-health" element={<KpiHealthPage />} />
+                <Route path="/kpi-health/:id" element={<KpiHealthDetailPage />} />
                 <Route path="/nlq-store" element={<NlqStorePage />} />
                 <Route path="/nlq-store/intents/:id" element={<NlqIntentDetailPage />} />
                 <Route path="/nlq-store/templates/:id" element={<NlqTemplateDetailPage />} />
