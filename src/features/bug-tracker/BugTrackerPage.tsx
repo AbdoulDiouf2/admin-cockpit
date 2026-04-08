@@ -175,7 +175,7 @@ export function BugTrackerPage() {
             <DataTable
               columns={columns}
               data={filteredBugs}
-              searchKey="title"
+              searchPlaceholder="Rechercher par titre, ID, organisation..."
               extraFilters={
                 <FilterBar
                   filters={[

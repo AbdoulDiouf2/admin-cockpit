@@ -53,6 +53,7 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
+    const [globalFilter, setGlobalFilter] = React.useState('')
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
@@ -62,6 +63,7 @@ export function DataTable<TData, TValue>({
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -71,6 +73,7 @@ export function DataTable<TData, TValue>({
         state: {
             sorting,
             columnFilters,
+            globalFilter,
             columnVisibility,
             rowSelection,
         },
@@ -80,13 +83,20 @@ export function DataTable<TData, TValue>({
         <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
                 <div className="flex flex-1 items-center space-x-2">
-                    {searchKey && (
+                    {searchKey ? (
                         <Input
                             placeholder={searchPlaceholder || t('dataTable.filterBy', { key: searchKey })}
                             value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
                             onChange={(event) =>
                                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
                             }
+                            className="max-w-sm h-8"
+                        />
+                    ) : (
+                        <Input
+                            placeholder={searchPlaceholder || t('common.search') || "Rechercher..."}
+                            value={globalFilter ?? ''}
+                            onChange={(event) => setGlobalFilter(event.target.value)}
                             className="max-w-sm h-8"
                         />
                     )}
