@@ -27,8 +27,8 @@ export const bugTrackerApi = {
     return response.data;
   },
 
-  addComment: async (id: string, content: string, isInternal: boolean = false) => {
-    const response = await api.post<BugComment>(`/v1/bugs/${id}/comments`, { content, isInternal });
+  addComment: async (id: string, content: string, isInternal: boolean = false, mentionedUserIds: string[] = []) => {
+    const response = await api.post<BugComment>(`/v1/bugs/${id}/comments`, { content, isInternal, mentionedUserIds });
     return response.data;
   },
 
@@ -44,7 +44,7 @@ export const bugTrackerApi = {
 
   getRecentComments: async (since?: string) => {
     const params = since ? { since } : {};
-    const response = await api.get<{ id: string; content: string; createdAt: string; bug: { id: string; bugId: string; title: string }; author: { id: string; firstName?: string | null; lastName?: string | null } | null }[]>('/v1/bugs/comments/recent', { params });
+    const response = await api.get<{ id: string; content: string; createdAt: string; mentionedUserIds: string[]; bug: { id: string; bugId: string; title: string }; author: { id: string; firstName?: string | null; lastName?: string | null } | null }[]>('/v1/bugs/comments/recent', { params });
     return response.data;
   },
 

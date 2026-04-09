@@ -1,5 +1,6 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { usersApi } from '@/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -34,8 +35,8 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { useState, useEffect } from 'react';
-import { markCommentIdsAsRead } from '@/lib/notifReadState';
+import { useState, useEffect, useRef } from 'react';
+import { markCommentIdsAsRead, getReadCommentIds, getNotifSince } from '@/lib/notifReadState';
 
 export function BugDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +47,88 @@ export function BugDetailPage() {
   const { user: currentUser } = useAuth();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState('');
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersApi.getAll(),
+  });
+
+  const users = usersResponse?.data || [];
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setCommentText(val);
+
+    const cursor = e.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursor);
+    const match = textBeforeCursor.match(/@([a-zA-Z0-9_]*)$/);
+    if (match) {
+      setShowMentions(true);
+      setMentionFilter(match[1].toLowerCase());
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const handleSelectMention = (userToMention: typeof users[0]) => {
+    const cursor = textareaRef.current?.selectionStart || commentText.length;
+    const textBeforeCursor = commentText.slice(0, cursor);
+    const textAfterCursor = commentText.slice(cursor);
+    const textBeforeMention = textBeforeCursor.replace(/@[a-zA-Z0-9_]*$/, '');
+    
+    const formattedName = `${userToMention.firstName || ''} ${userToMention.lastName || ''}`.trim() || userToMention.email.split('@')[0];
+    const mentionText = `@${formattedName} `;
+    const newCursorPos = textBeforeMention.length + mentionText.length;
+    
+    setCommentText(textBeforeMention + mentionText + textAfterCursor);
+    setShowMentions(false);
+    setMentionedUserIds(prev => Array.from(new Set([...prev, userToMention.id])));
+    
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  const filteredUsers = users.filter(u => {
+    if (u.id === currentUser?.id) return false;
+    const isSuperAdmin = u.userRoles?.some(ur => ur.role?.name === 'superadmin');
+    if (!isSuperAdmin) return false;
+    
+    return u.firstName?.toLowerCase().includes(mentionFilter) || 
+           u.lastName?.toLowerCase().includes(mentionFilter) || 
+           u.email.toLowerCase().includes(mentionFilter);
+  }).slice(0, 5);
+
+  useEffect(() => {
+    setSelectedMentionIndex(0);
+  }, [mentionFilter, showMentions]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showMentions && filteredUsers.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => (prev < filteredUsers.length - 1 ? prev + 1 : prev));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => (prev > 0 ? prev - 1 : 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSelectMention(filteredUsers[selectedMentionIndex]);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowMentions(false);
+      }
+    }
+  };
 
   const { data: bug, isLoading, error } = useQuery({
     queryKey: ['bug', id],
@@ -53,12 +136,57 @@ export function BugDetailPage() {
     enabled: !!id,
   });
 
-  // Marquer les commentaires de ce bug comme lus dans le centre de notifs
+  const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState<number>(location.state?.incomingUnreadCount || 0);
+  const hasProcessedUnread = useRef(!!location.state?.incomingUnreadCount);
+
+  useEffect(() => {
+    if (location.state?.incomingUnreadCount) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state?.incomingUnreadCount, navigate]);
+
+  // Marquer les commentaires de ce bug comme lus dans le centre de notifs,
+  // et vérifier s'il y avait des commentaires non lus pour afficher la bulle.
+  // Gère aussi le cas où 'react-query' affiche le cache PUIS les nouvelles données.
   useEffect(() => {
     if (bug?.comments?.length && currentUser?.id) {
-      markCommentIdsAsRead(currentUser.id, bug.comments.map((c) => c.id));
+      const readIds = getReadCommentIds(currentUser.id);
+      const sinceDate = new Date(getNotifSince(currentUser.id));
+      
+      const newlyUnread = bug.comments.filter(c => 
+        c.authorId !== currentUser.id && 
+        new Date(c.createdAt) > sinceDate &&
+        !readIds.has(c.id)
+      );
+      
+      if (newlyUnread.length > 0) {
+        setUnreadCount(prev => prev + newlyUnread.length);
+      }
+      
+      if (newlyUnread.length > 0 || !hasProcessedUnread.current) {
+        hasProcessedUnread.current = true;
+        markCommentIdsAsRead(currentUser.id, bug.comments.map((c) => c.id));
+      }
     }
   }, [bug?.comments, currentUser?.id]);
+
+  // Observer l'apparition de la zone de commentaire pour masquer la bulle si l'utilisateur scrolle manuellement
+  useEffect(() => {
+    if (unreadCount === 0 || !textareaRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setUnreadCount(0);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(textareaRef.current);
+    return () => observer.disconnect();
+  }, [unreadCount]);
 
   const statusMutation = useMutation({
     mutationFn: (status: BugStatus) => bugTrackerApi.updateBugStatus(id!, status),
@@ -69,16 +197,66 @@ export function BugDetailPage() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: () => bugTrackerApi.addComment(id!, commentText, false),
+    mutationFn: () => bugTrackerApi.addComment(id!, commentText, false, mentionedUserIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bug', id] });
       setCommentText('');
+      setMentionedUserIds([]);
       toast({ title: 'Commentaire ajouté' });
     },
     onError: () => {
       toast({ title: 'Erreur', description: "Impossible d'ajouter le commentaire.", variant: 'destructive' });
     },
   });
+
+  const renderCommentContent = (content: string, isEditing: boolean = false) => {
+    const validNames = users
+      .map(u => `${u.firstName || ''} ${u.lastName || ''}`.trim())
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length); // Longest first to avoid partial matches
+
+    if (validNames.length === 0) {
+      return isEditing ? <span className="text-transparent">{content}</span> : content;
+    }
+
+    const escapeLocal = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const namesPattern = validNames.map(n => escapeLocal(`@${n}`)).join('|');
+    const regex = new RegExp(`(${namesPattern}|@[a-zA-Z0-9_.-]+)`, 'gi'); // Also fallback to simple mentions
+
+    return content.split(regex).map((part, i) => {
+      if (!part) return null;
+      
+      const isMention = part.startsWith('@') && (
+        validNames.some(n => part.toLowerCase() === `@${n.toLowerCase()}`) || 
+        /^@[a-zA-Z0-9_.-]+$/.test(part)
+      );
+
+      if (isEditing) {
+          if (isMention) {
+             return <span key={i} className="bg-purple-200 dark:bg-purple-900/60 rounded-sm text-transparent shadow-sm">{part}</span>;
+          }
+          return <span key={i} className="text-transparent">{part}</span>;
+      }
+
+      if (isMention) {
+        const matchedUser = validNames.includes(part.substring(1))
+          ? users.find(u => `${u.firstName || ''} ${u.lastName || ''}`.trim() === part.substring(1))
+          : null;
+
+        return (
+          <span 
+            key={i} 
+            onClick={() => matchedUser && navigate(`/users/${matchedUser.id}`)}
+            className="text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-900/40 px-1 py-0.5 rounded cursor-pointer hover:underline inline-block"
+            title={matchedUser ? `Voir le profil de ${part.substring(1)}` : ''}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   const assignMutation = useMutation({
     mutationFn: () => bugTrackerApi.assignBug(id!, currentUser!.id),
@@ -341,7 +519,7 @@ export function BugDetailPage() {
                             </span>
                           </div>
                           <div className="rounded-2xl rounded-tl-sm px-3 py-2 text-sm whitespace-pre-wrap bg-muted text-foreground">
-                            {comment.content}
+                            {renderCommentContent(comment.content)}
                           </div>
                         </div>
                       </div>
@@ -354,13 +532,51 @@ export function BugDetailPage() {
 
               <Separator className="my-4" />
               <div className="space-y-3 pt-1 pb-1">
-                <Textarea
-                  placeholder="Écrire un commentaire..."
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
+                <div className="relative">
+                  {/* BACKGROUND OVERLAY */}
+                  <div 
+                    ref={overlayRef}
+                    className="absolute inset-0 px-3 py-2 text-sm whitespace-pre-wrap break-words pointer-events-none overflow-hidden border border-transparent"
+                    aria-hidden="true"
+                    style={{ 
+                      fontFamily: 'inherit',
+                      lineHeight: 'inherit'
+                    }}
+                  >
+                    {renderCommentContent(commentText, true)}
+                    {commentText.endsWith('\n') ? <br /> : null}
+                  </div>
+                  
+                  {/* REAL TEXTAREA */}
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Écrire un commentaire... (Tapez @ pour mentionner)"
+                    value={commentText}
+                    onChange={handleCommentChange}
+                    onKeyDown={handleKeyDown}
+                    onScroll={(e) => {
+                      if (overlayRef.current) overlayRef.current.scrollTop = e.currentTarget.scrollTop;
+                    }}
+                    rows={3}
+                    className="resize-none relative z-10 bg-transparent caret-foreground"
+                    spellCheck={false}
+                  />
+                  {showMentions && filteredUsers.length > 0 && (
+                    <div className="absolute bottom-full left-0 mb-1 w-64 bg-background border border-border rounded-md shadow-lg z-50 overflow-hidden text-sm">
+                      <div className="p-1 px-2 text-xs font-semibold text-muted-foreground bg-muted/30">Membres de l'équipe</div>
+                      {filteredUsers.map((u, idx) => (
+                        <button
+                          key={u.id}
+                          className={`w-full text-left px-3 py-2 flex flex-col items-start gap-0.5 transition-colors ${idx === selectedMentionIndex ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                          onClick={() => handleSelectMention(u)}
+                        >
+                          <span className="font-semibold">{u.firstName} {u.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{u.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="flex justify-end">
                   <Button
                     size="sm"
@@ -507,6 +723,21 @@ export function BugDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button for Unread Comments */}
+      {unreadCount > 0 && (
+        <Button
+          onClick={() => {
+             textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             setUnreadCount(0);
+          }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-2xl z-50 animate-bounce gap-2"
+          size="lg"
+        >
+          <MessageSquare className="h-5 w-5" />
+          {unreadCount} nouveau{unreadCount > 1 ? 'x' : ''} commentaire{unreadCount > 1 ? 's' : ''} 👇
+        </Button>
+      )}
     </div>
   );
 }

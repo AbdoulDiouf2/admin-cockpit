@@ -53,7 +53,7 @@ export function NotificationBell() {
 
   const handleClickComment = (comment: typeof comments[number]) => {
     if (user?.id) markCommentIdsAsRead(user.id, [comment.id]);
-    navigate(`/bug-tracker/${comment.bug.id}`);
+    navigate(`/bug-tracker/${comment.bug.id}`, { state: { incomingUnreadCount: 1 } });
     setOpen(false);
   };
 
@@ -124,8 +124,13 @@ export function NotificationBell() {
                   {/* Point bleu si non lu */}
                   <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${isUnread ? 'bg-primary' : 'bg-transparent'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-primary truncate">
+                    <p className="text-[11px] font-semibold text-primary truncate flex items-center gap-1">
                       {comment.bug.bugId} — {comment.bug.title}
+                      {comment.mentionedUserIds?.includes(user?.id || '') && (
+                        <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-1.5 py-0 rounded-full text-[9px] uppercase tracking-wider ml-1">
+                          Mention
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-foreground/80 mt-0.5 line-clamp-2 leading-relaxed">
                       {comment.content}

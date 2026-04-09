@@ -11,6 +11,7 @@ export interface BugComment {
   content: string;
   createdAt: string;
   isInternal: boolean; // Pour les notes internes admin
+  mentionedUserIds?: string[];
 }
 
 export interface Bug {

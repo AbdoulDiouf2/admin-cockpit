@@ -341,11 +341,11 @@ export function DashboardPage() {
             <CardDescription>Répartition des organisations par secteur</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[220px] w-full">
+            <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={statsData?.sectorDistribution || []} margin={{ top: 5, right: 10, left: -20, bottom: 30 }}>
+                <BarChart data={statsData?.sectorDistribution || []} margin={{ top: 5, right: 10, left: -20, bottom: 70 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                  <XAxis dataKey="name" className="text-xs" tickLine={false} axisLine={false} angle={-30} textAnchor="end" interval={0} />
+                  <XAxis dataKey="name" className="text-xs" tickLine={false} axisLine={false} angle={-35} textAnchor="end" interval={0} />
                   <YAxis className="text-xs" tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                   <Bar dataKey="value" name="Organisations" fill="#6366f1" radius={[6, 6, 0, 0]} />
