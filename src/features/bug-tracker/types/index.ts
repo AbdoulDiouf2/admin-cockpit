@@ -60,6 +60,11 @@ export interface Bug {
     lastName?: string;
     name?: string;
   };
+  organizationId?: string;
+  organization?: {
+    id: string;
+    name: string;
+  };
   assignedToId?: string;
   assignedTo?: {
     id: string;

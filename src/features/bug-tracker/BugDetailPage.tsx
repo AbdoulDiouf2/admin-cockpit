@@ -295,7 +295,10 @@ export function BugDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Client / Entité</p>
-                <p className="font-bold">{bug.entity_code}</p>
+                <div className="flex flex-col">
+                  <p className="font-bold">{bug.organization?.name || '—'}</p>
+                  {bug.entity_code && <p className="text-xs text-muted-foreground">{bug.entity_code}</p>}
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Exercice Comptable</p>

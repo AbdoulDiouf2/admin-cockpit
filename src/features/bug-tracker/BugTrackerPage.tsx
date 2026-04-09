@@ -54,6 +54,21 @@ export function BugTrackerPage() {
     {
       accessorKey: 'entity_code',
       header: t('bugTracker.columnOrg'),
+      cell: ({ row }) => {
+        const orgName = row.original.organization?.name;
+        const entityCode = row.getValue('entity_code') as string;
+        
+        if (orgName && entityCode) {
+          return (
+            <div className="flex flex-col">
+              <span className="font-medium text-xs">{orgName}</span>
+              <span className="text-[10px] text-muted-foreground">{entityCode}</span>
+            </div>
+          );
+        }
+        
+        return <span className="text-xs">{orgName || entityCode || '—'}</span>;
+      },
     },
     {
       accessorKey: 'priority',
