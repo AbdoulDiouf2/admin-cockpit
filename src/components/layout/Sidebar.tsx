@@ -179,7 +179,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                           {/* Badge */}
                           {showBadge && (
                             <span className={cn(
-                              "flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 animate-in zoom-in-50",
+                              "flex items-center justify-center bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 animate-in zoom-in-50",
                               collapsed ? "absolute top-1 right-2 scale-75" : "ml-auto"
                             )}>
                               {unresolvedCount > 99 ? '99+' : unresolvedCount}

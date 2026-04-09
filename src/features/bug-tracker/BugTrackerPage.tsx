@@ -76,14 +76,14 @@ export function BugTrackerPage() {
       cell: ({ row }) => {
         const priority = row.getValue('priority') as BugPriority;
         const variants: Record<BugPriority, string> = {
-          critique: 'bg-red-500 hover:bg-red-600',
-          haute: 'bg-orange-500 hover:bg-orange-600',
-          moyenne: 'bg-yellow-500 hover:bg-yellow-600',
-          basse: 'bg-green-500 hover:bg-green-600',
-          a_analyser: 'bg-slate-500 hover:bg-slate-600',
+          critique: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50',
+          haute: 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-900/50',
+          moyenne: 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-900/50',
+          basse: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50',
+          a_analyser: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700',
         };
         return (
-          <Badge className={`${variants[priority]} text-white border-none capitalize`}>
+          <Badge className={`${variants[priority]} capitalize`}>
             {t(`bugTracker.priority${priority.charAt(0).toUpperCase() + priority.slice(1).replace('_', '')}`)}
           </Badge>
         );

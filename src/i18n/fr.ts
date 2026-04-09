@@ -499,6 +499,8 @@ export const fr = {
     notifPaymentSuccessDesc: "Recevoir un email à chaque paiement confirmé",
     notifErrorLogs: 'Logs d\'erreur',
     notifErrorLogsDesc: 'Recevoir un email quand un log de type erreur est enregistré',
+    notifBugReports: 'Signalements de bugs',
+    notifBugReportsDesc: 'Notifier les admins et confirmer la réception au soumetteur à chaque nouveau signalement',
     notifRecipients: 'Destinataires des alertes',
     notifRecipientsDesc: 'Sélectionnez les administrateurs qui recevront ces emails',
     notifNoAdmins: 'Aucun administrateur disponible',

@@ -7,7 +7,7 @@ export interface BugComment {
   id: string;
   bugId: string;
   authorId: string;
-  authorName: string;
+  author?: { id: string; firstName?: string; lastName?: string; email: string };
   content: string;
   createdAt: string;
   isInternal: boolean; // Pour les notes internes admin
@@ -73,6 +73,7 @@ export interface Bug {
   createdAt: string;
   updatedAt: string;
   estimated_resolution?: string;
+  comments?: BugComment[];
 }
 
 export interface BugStats {

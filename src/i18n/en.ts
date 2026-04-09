@@ -460,6 +460,8 @@ export const en = {
     notifPaymentSuccessDesc: 'Receive an email for every confirmed payment',
     notifErrorLogs: 'Error logs',
     notifErrorLogsDesc: 'Receive an email when an error log is recorded',
+    notifBugReports: 'Bug reports',
+    notifBugReportsDesc: 'Notify admins and confirm receipt to the submitter on each new bug report',
     notifRecipients: 'Alert recipients',
     notifRecipientsDesc: 'Select the administrators who will receive these emails',
     notifNoAdmins: 'No administrators available',

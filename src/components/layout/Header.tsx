@@ -25,6 +25,7 @@ import {
   Keyboard,
 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+import { NotificationBell } from './NotificationBell';
 
 // Ordered from most specific to least specific
 const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string; subKey?: string }[] = [
@@ -167,6 +168,9 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-2 lg:ml-2">
+          {/* Notification bell */}
+          <NotificationBell />
+
           {/* Keyboard shortcuts hint */}
           <Button
             variant="ghost"

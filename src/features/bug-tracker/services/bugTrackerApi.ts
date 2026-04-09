@@ -42,6 +42,12 @@ export const bugTrackerApi = {
     return response.data;
   },
 
+  getRecentComments: async (since?: string) => {
+    const params = since ? { since } : {};
+    const response = await api.get<{ id: string; content: string; createdAt: string; bug: { id: string; bugId: string; title: string }; author: { id: string; firstName?: string | null; lastName?: string | null } | null }[]>('/v1/bugs/comments/recent', { params });
+    return response.data;
+  },
+
   uploadAttachment: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

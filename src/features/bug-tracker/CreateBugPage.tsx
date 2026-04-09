@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   Plus, 
@@ -89,6 +89,7 @@ const MODULES = [
 
 export function CreateBugPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -143,7 +144,18 @@ export function CreateBugPage() {
     }
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
   const processFiles = async (files: File[]) => {
+    const oversized = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast({
+        title: 'Fichier trop volumineux',
+        description: `Les fichiers doivent faire moins de 10 Mo. (${oversized.map(f => f.name).join(', ')})`,
+        variant: 'destructive',
+      });
+      return;
+    }
     setIsUploading(true);
     try {
       const uploadPromises = files.map(file => bugTrackerApi.uploadAttachment(file));
@@ -179,6 +191,7 @@ export function CreateBugPage() {
       return bugTrackerApi.createBug(payload as any);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bugs'] });
       toast({ title: 'Signalement créé', description: 'Le bug a été enregistré.' });
       navigate('/bug-tracker');
     },
