@@ -22,7 +22,7 @@ export const bugTrackerApi = {
     return response.data;
   },
 
-  assignBug: async (id: string, userId: string) => {
+  assignBug: async (id: string, userId: string | null) => {
     const response = await api.patch<Bug>(`/v1/bugs/${id}/assign`, { userId });
     return response.data;
   },

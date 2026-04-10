@@ -171,22 +171,25 @@ export function BugDetailPage() {
     }
   }, [bug?.comments, currentUser?.id]);
 
-  // Observer l'apparition de la zone de commentaire pour masquer la bulle si l'utilisateur scrolle manuellement
+  // Observer l'apparition de la zone de fin de commentaires pour masquer la bulle
   useEffect(() => {
-    if (unreadCount === 0 || !textareaRef.current) return;
+    if (unreadCount === 0) return;
     
+    const target = document.getElementById('comments-bottom-anchor');
+    if (!target) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setUnreadCount(0);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0 }
     );
     
-    observer.observe(textareaRef.current);
+    observer.observe(target);
     return () => observer.disconnect();
-  }, [unreadCount]);
+  }, [unreadCount, bug?.comments]);
 
   const statusMutation = useMutation({
     mutationFn: (status: BugStatus) => bugTrackerApi.updateBugStatus(id!, status),
@@ -259,18 +262,18 @@ export function BugDetailPage() {
   };
 
   const assignMutation = useMutation({
-    mutationFn: () => bugTrackerApi.assignBug(id!, currentUser!.id),
+    mutationFn: (userId: string | null) => bugTrackerApi.assignBug(id!, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bug', id] });
       toast({
-        title: "Bug assigné",
-        description: "Le bug vous a été assigné avec succès.",
+        title: "Assignation mise à jour",
+        description: "L'assignation du bug a été modifiée avec succès.",
       });
     },
     onError: (err: any) => {
       toast({
         title: "Erreur",
-        description: err.response?.data?.message || "Impossible d'assigner le bug.",
+        description: err.response?.data?.message || "Impossible de modifier l'assignation du bug.",
         variant: "destructive",
       });
     },
@@ -355,15 +358,27 @@ export function BugDetailPage() {
               </SelectContent>
             </Select>
           </div>
-            <Button 
-              variant="outline" 
-              className="mt-5"
-              onClick={() => assignMutation.mutate()}
-              disabled={assignMutation.isPending || bug.assignedToId === currentUser?.id}
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-xs text-muted-foreground">Assignation</span>
+            <Select 
+              value={bug.assignedToId || "unassigned"}
+              onValueChange={(value) => assignMutation.mutate(value === "unassigned" ? null : value)}
+              disabled={assignMutation.isPending}
             >
-              <UserIcon className="h-4 w-4 mr-2" />
-              {bug.assignedToId === currentUser?.id ? 'Assigné à vous' : t('bugTracker.assignToMe')}
-            </Button>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Non assigné" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned" className="text-muted-foreground italic">Non assigné</SelectItem>
+                {users.filter((u: any) => u.userRoles?.some((ur: any) => ur.role?.name === 'superadmin')).map((u: any) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.firstName || u.lastName ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : u.email.split('@')[0]}
+                    {u.id === currentUser?.id && " (Vous)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -529,6 +544,8 @@ export function BugDetailPage() {
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-6">Aucun commentaire pour l'instant</p>
               )}
+              {/* Anchor for scroll observer */}
+              <div id="comments-bottom-anchor" className="h-px w-full" />
 
               <Separator className="my-4" />
               <div className="space-y-3 pt-1 pb-1">
@@ -728,7 +745,7 @@ export function BugDetailPage() {
       {unreadCount > 0 && (
         <Button
           onClick={() => {
-             textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             document.getElementById('comments-bottom-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
              setUnreadCount(0);
           }}
           className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-2xl z-50 animate-bounce gap-2"

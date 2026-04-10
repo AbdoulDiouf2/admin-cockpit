@@ -12,12 +12,17 @@ import { bugTrackerApi } from './services/bugTrackerApi';
 import { Bug, BugPriority, BugStatus } from './types';
 import { format } from 'date-fns';
 import { ColumnDef } from '@tanstack/react-table';
+import { useAuth } from '@/features/auth/AuthContext';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function BugTrackerPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const [tabFilter, setTabFilter] = useState<'all' | 'active' | 'closed'>('active');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPriority, setFilterPriority] = useState<string>('');
+  const [filterAssigned, setFilterAssigned] = useState<string>('');
 
   const { data: bugs, isLoading, error } = useQuery({
     queryKey: ['bugs'],
@@ -27,11 +32,27 @@ export function BugTrackerPage() {
   const filteredBugs = useMemo(() => {
     if (!bugs) return [];
     return bugs.filter((bug) => {
+      if (tabFilter === 'active' && (bug.status === 'resolu' || bug.status === 'ferme')) return false;
+      if (tabFilter === 'closed' && (bug.status !== 'resolu' && bug.status !== 'ferme')) return false;
+      
       if (filterStatus && bug.status !== filterStatus) return false;
       if (filterPriority && bug.priority !== filterPriority) return false;
+      if (filterAssigned === 'me' && bug.assignedTo?.id !== currentUser?.id) return false;
+      if (filterAssigned === 'unassigned' && bug.assignedTo) return false;
       return true;
     });
-  }, [bugs, filterStatus, filterPriority]);
+  }, [bugs, tabFilter, filterStatus, filterPriority, filterAssigned, currentUser]);
+
+  const getRowClassName = (bug: Bug) => {
+    if (bug.status === 'resolu' || bug.status === 'ferme') {
+      return "opacity-60 bg-muted/20 select-none grayscale-[20%]";
+    }
+    return "";
+  };
+
+  const activeCount = useMemo(() => bugs?.filter(b => b.status !== 'resolu' && b.status !== 'ferme').length || 0, [bugs]);
+  const closedCount = useMemo(() => bugs?.filter(b => b.status === 'resolu' || b.status === 'ferme').length || 0, [bugs]);
+  const allCount = bugs?.length || 0;
 
   const columns: ColumnDef<Bug>[] = [
     {
@@ -187,49 +208,79 @@ export function BugTrackerPage() {
               <p>Erreur lors du chargement des bugs</p>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={filteredBugs}
-              searchPlaceholder="Rechercher par titre, ID, organisation..."
-              extraFilters={
-                <FilterBar
-                  filters={[
-                    {
-                      key: 'status',
-                      label: t('bugTracker.filterStatus'),
-                      options: [
-                        { label: t('bugTracker.statusNew'), value: 'nouveau' },
-                        { label: t('bugTracker.statusAnalysis'), value: 'en_analyse' },
-                        { label: t('bugTracker.statusInProgress'), value: 'en_cours' },
-                        { label: t('bugTracker.statusTest'), value: 'en_test' },
-                        { label: t('bugTracker.statusResolved'), value: 'resolu' },
-                        { label: t('bugTracker.statusClosed'), value: 'ferme' },
-                      ],
-                      value: filterStatus,
-                      onChange: setFilterStatus,
-                    },
-                    {
-                      key: 'priority',
-                      label: t('bugTracker.filterPriority'),
-                      options: [
-                        { label: t('bugTracker.priorityCritique'), value: 'critique' },
-                        { label: t('bugTracker.priorityHaute'), value: 'haute' },
-                        { label: t('bugTracker.priorityMoyenne'), value: 'moyenne' },
-                        { label: t('bugTracker.priorityBasse'), value: 'basse' },
-                        { label: t('bugTracker.priorityAnalyser'), value: 'a_analyser' },
-                      ],
-                      value: filterPriority,
-                      onChange: setFilterPriority,
-                    },
-                  ]}
-                  onReset={() => {
-                    setFilterStatus('');
-                    setFilterPriority('');
-                  }}
-                  hasActiveFilters={filterStatus !== '' || filterPriority !== ''}
-                />
-              }
-            />
+            <Tabs defaultValue="active" value={tabFilter} onValueChange={(v) => setTabFilter(v as any)} className="w-full">
+              <div className="flex justify-between items-center mb-4">
+                <TabsList>
+                  <TabsTrigger value="active" className="flex items-center gap-2">
+                    Actifs (Ouverts)
+                    <Badge variant="secondary" className="px-1.5 py-0 text-xs rounded-full font-normal hidden sm:inline-flex">{activeCount}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="closed" className="flex items-center gap-2">
+                    Clôturés
+                    <Badge variant="secondary" className="px-1.5 py-0 text-xs rounded-full font-normal hidden sm:inline-flex">{closedCount}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="all" className="flex items-center gap-2">
+                    Tous
+                    <Badge variant="secondary" className="px-1.5 py-0 text-xs rounded-full font-normal hidden sm:inline-flex">{allCount}</Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              <DataTable
+                columns={columns}
+                data={filteredBugs}
+                getRowClassName={getRowClassName}
+                searchPlaceholder="Rechercher par titre, ID, organisation..."
+                extraFilters={
+                  <FilterBar
+                    filters={[
+                      {
+                        key: 'status',
+                        label: t('bugTracker.filterStatus'),
+                        options: [
+                          { label: t('bugTracker.statusNouveau'), value: 'nouveau' },
+                          { label: t('bugTracker.statusEnAnalyse'), value: 'en_analyse' },
+                          { label: t('bugTracker.statusEnCours'), value: 'en_cours' },
+                          { label: t('bugTracker.statusEnTest'), value: 'en_test' },
+                          { label: t('bugTracker.statusResolu'), value: 'resolu' },
+                          { label: t('bugTracker.statusFerme'), value: 'ferme' },
+                        ],
+                        value: filterStatus,
+                        onChange: setFilterStatus,
+                      },
+                      {
+                        key: 'priority',
+                        label: t('bugTracker.filterPriority'),
+                        options: [
+                          { label: t('bugTracker.priorityCritique'), value: 'critique' },
+                          { label: t('bugTracker.priorityHaute'), value: 'haute' },
+                          { label: t('bugTracker.priorityMoyenne'), value: 'moyenne' },
+                          { label: t('bugTracker.priorityBasse'), value: 'basse' },
+                          { label: t('bugTracker.priorityAnalyser'), value: 'a_analyser' },
+                        ],
+                        value: filterPriority,
+                        onChange: setFilterPriority,
+                      },
+                      {
+                        key: 'assigned',
+                        label: t('bugTracker.filterAssigned'),
+                        options: [
+                          { label: t('bugTracker.filterAssignedMe'), value: 'me' },
+                          { label: t('bugTracker.filterAssignedUnassigned'), value: 'unassigned' },
+                        ],
+                        value: filterAssigned,
+                        onChange: setFilterAssigned,
+                      },
+                    ]}
+                    onReset={() => {
+                      setFilterStatus('');
+                      setFilterPriority('');
+                      setFilterAssigned('');
+                    }}
+                    hasActiveFilters={filterStatus !== '' || filterPriority !== '' || filterAssigned !== ''}
+                  />
+                }
+              />
+            </Tabs>
           )}
         </CardContent>
       </Card>

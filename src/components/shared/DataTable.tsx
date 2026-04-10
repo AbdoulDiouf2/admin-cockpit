@@ -45,6 +45,7 @@ interface DataTableProps<TData, TValue> {
     searchPlaceholder?: string
     isLoading?: boolean
     extraFilters?: React.ReactNode
+    getRowClassName?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -54,6 +55,7 @@ export function DataTable<TData, TValue>({
     searchPlaceholder,
     isLoading,
     extraFilters,
+    getRowClassName,
 }: DataTableProps<TData, TValue>) {
     const { t } = useTranslation()
     const [sorting, setSorting] = React.useState<SortingState>([])
@@ -184,6 +186,7 @@ export function DataTable<TData, TValue>({
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
+                                    className={getRowClassName ? getRowClassName(row.original) : undefined}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
