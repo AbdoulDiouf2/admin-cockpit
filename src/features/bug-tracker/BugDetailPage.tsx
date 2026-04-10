@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { bugTrackerApi } from './services/bugTrackerApi';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -147,6 +148,18 @@ export function BugDetailPage() {
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState<number>(location.state?.incomingUnreadCount || 0);
   const hasProcessedUnread = useRef(!!location.state?.incomingUnreadCount);
+
+  // Auto-scroll to bottom of comments
+  useEffect(() => {
+    if (bug?.comments?.length) {
+      setTimeout(() => {
+        const viewport = document.getElementById('bug-comments-scroll-area')?.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }, 100); // slight delay to ensure DOM is ready
+    }
+  }, [bug?.comments?.length]);
 
   useEffect(() => {
     if (location.state?.incomingUnreadCount) {
@@ -527,45 +540,49 @@ export function BugDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 px-4">
-              {bug.comments?.length ? (
-                <div className="space-y-4 mb-4">
-                  {bug.comments.map(comment => {
-                    const fullName = comment.author
-                      ? `${comment.author.firstName ?? ''} ${comment.author.lastName ?? ''}`.trim() || comment.author.email
-                      : '?';
-                    const initials = comment.author
-                      ? `${(comment.author.firstName ?? '')[0] ?? ''}${(comment.author.lastName ?? '')[0] ?? ''}`.toUpperCase() || comment.author.email[0].toUpperCase()
-                      : '?';
-                    const avatarColors = [
-                      'bg-blue-500', 'bg-violet-500', 'bg-emerald-500',
-                      'bg-orange-500', 'bg-rose-500', 'bg-cyan-500',
-                    ];
-                    const colorIndex = (comment.authorId?.charCodeAt(0) ?? 0) % avatarColors.length;
-                    return (
-                      <div key={comment.id} className="flex gap-3 items-start">
-                        <div className={`h-8 w-8 rounded-full ${avatarColors[colorIndex]} flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5`}>
-                          {initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="text-sm font-semibold leading-none">{fullName}</span>
-                                    <span className="text-xs text-muted-foreground">
-                              {format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm')}
-                            </span>
+              <ScrollArea id="bug-comments-scroll-area" className="h-[400px] mb-4 pr-4">
+                {bug.comments?.length ? (
+                  <div className="space-y-4">
+                    {bug.comments.map(comment => {
+                      const fullName = comment.author
+                        ? `${comment.author.firstName ?? ''} ${comment.author.lastName ?? ''}`.trim() || comment.author.email
+                        : '?';
+                      const initials = comment.author
+                        ? `${(comment.author.firstName ?? '')[0] ?? ''}${(comment.author.lastName ?? '')[0] ?? ''}`.toUpperCase() || comment.author.email[0].toUpperCase()
+                        : '?';
+                      const avatarColors = [
+                        'bg-blue-500', 'bg-violet-500', 'bg-emerald-500',
+                        'bg-orange-500', 'bg-rose-500', 'bg-cyan-500',
+                      ];
+                      const colorIndex = (comment.authorId?.charCodeAt(0) ?? 0) % avatarColors.length;
+                      return (
+                        <div key={comment.id} className="flex gap-3 items-start">
+                          <div className={`h-8 w-8 rounded-full ${avatarColors[colorIndex]} flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5`}>
+                            {initials}
                           </div>
-                          <div className="rounded-2xl rounded-tl-sm px-3 py-2 text-sm whitespace-pre-wrap bg-muted text-foreground">
-                            {renderCommentContent(comment.content)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="text-sm font-semibold leading-none">{fullName}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                {format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm')}
+                              </span>
+                            </div>
+                            <div className="rounded-2xl rounded-tl-sm px-3 py-2 text-sm whitespace-pre-wrap bg-muted text-foreground">
+                              {renderCommentContent(comment.content)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">Aucun commentaire pour l'instant</p>
-              )}
-              {/* Anchor for scroll observer */}
-              <div id="comments-bottom-anchor" className="h-px w-full" />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground text-center py-6">Aucun commentaire pour l'instant</p>
+                  </div>
+                )}
+                {/* Anchor for scroll observer */}
+                <div id="comments-bottom-anchor" className="h-px w-full mt-4" />
+              </ScrollArea>
 
               <Separator className="my-4" />
               <div className="space-y-3 pt-1 pb-1">
