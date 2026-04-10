@@ -34,6 +34,10 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useState, useEffect, useRef } from 'react';
 import { markCommentIdsAsRead, getReadCommentIds, getNotifSince } from '@/lib/notifReadState';
@@ -45,6 +49,10 @@ export function BugDetailPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+  const [resolveAssignDialogOpen, setResolveAssignDialogOpen] = useState(false);
+  const [tempAssignee, setTempAssignee] = useState<string>('');
+  const [closeBugDialogOpen, setCloseBugDialogOpen] = useState(false);
+  const [closingComment, setClosingComment] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [showMentions, setShowMentions] = useState(false);
@@ -343,7 +351,17 @@ export function BugDetailPage() {
             <span className="text-xs text-muted-foreground">{t('bugTracker.changeStatus')}</span>
             <Select 
               value={bug.status} 
-              onValueChange={(value) => statusMutation.mutate(value as BugStatus)}
+              onValueChange={(value) => {
+                if (value === 'resolu' && !bug.assignedToId) {
+                  setTempAssignee('');
+                  setResolveAssignDialogOpen(true);
+                } else if (value === 'ferme') {
+                  setClosingComment('');
+                  setCloseBugDialogOpen(true);
+                } else {
+                  statusMutation.mutate(value as BugStatus);
+                }
+              }}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
@@ -431,7 +449,7 @@ export function BugDetailPage() {
                 {t('bugTracker.sectionEnvironment')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground uppercase">OS</p>
                 <p className="font-medium">{bug.os}</p>
@@ -440,13 +458,15 @@ export function BugDetailPage() {
                 <p className="text-xs text-muted-foreground uppercase">Navigateur</p>
                 <p className="font-medium">{bug.browser}</p>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <p className="text-xs text-muted-foreground uppercase">Résolution</p>
                 <p className="font-medium">{bug.screen}</p>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-3">
                 <p className="text-xs text-muted-foreground uppercase">URL</p>
-                <p className="font-medium truncate">{bug.url}</p>
+                <a href={bug.url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
+                  {bug.url}
+                </a>
               </div>
             </CardContent>
           </Card>
@@ -738,6 +758,86 @@ export function BugDetailPage() {
                />
              )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resolveAssignDialogOpen} onOpenChange={setResolveAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assignation requise</DialogTitle>
+            <DialogDescription>
+              Un bug ne peut pas être résolu sans être assigné. À qui ce bug a-t-il été assigné pour sa résolution ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={tempAssignee} onValueChange={setTempAssignee}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un membre..." />
+              </SelectTrigger>
+              <SelectContent>
+                {users.filter((u: any) => u.userRoles?.some((ur: any) => ur.role?.name === 'superadmin')).map((u: any) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.firstName || u.lastName ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : u.email.split('@')[0]}
+                    {u.id === currentUser?.id && " (Vous)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResolveAssignDialogOpen(false)}>Annuler</Button>
+            <Button 
+              disabled={!tempAssignee || assignMutation.isPending || statusMutation.isPending}
+              onClick={async () => {
+                await assignMutation.mutateAsync(tempAssignee);
+                statusMutation.mutate('resolu');
+                setResolveAssignDialogOpen(false);
+              }}
+            >
+              Confirmer et Résoudre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={closeBugDialogOpen} onOpenChange={setCloseBugDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clôture du bug</DialogTitle>
+            <DialogDescription>
+              Veuillez ajouter un commentaire pour expliquer la raison de la clôture de ce bug (ex: doublon, comportement normal, corrigé dans une autre version, etc.).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea 
+              value={closingComment} 
+              onChange={(e) => setClosingComment(e.target.value)}
+              placeholder="Raison de la clôture..."
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseBugDialogOpen(false)}>Annuler</Button>
+            <Button 
+              disabled={!closingComment.trim() || statusMutation.isPending}
+              onClick={async () => {
+                try {
+                  await bugTrackerApi.addComment(id!, `[Clôture] ${closingComment.trim()}`, false, []);
+                  statusMutation.mutate('ferme');
+                  setCloseBugDialogOpen(false);
+                  queryClient.invalidateQueries({ queryKey: ['bug', id] });
+                } catch (e) {
+                  toast({
+                    title: "Erreur",
+                    description: "Impossible d'ajouter le commentaire de clôture.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Confirmer et Fermer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
