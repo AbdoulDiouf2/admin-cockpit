@@ -53,6 +53,22 @@ export interface UserRole {
   role: Role;
 }
 
+// Agent Release types
+export interface AgentRelease {
+  id: string;
+  version: string;
+  platform: 'windows' | 'linux' | 'macos';
+  arch: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number | null;
+  checksum: string | null;
+  isLatest: boolean;
+  changelog: string | null;
+  uploadedAt: string;
+  uploadedBy: string | null;
+}
+
 // Subscription Plan types
 export interface SubscriptionPlan {
   id: string;

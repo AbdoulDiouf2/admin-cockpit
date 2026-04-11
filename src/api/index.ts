@@ -21,6 +21,7 @@ import type {
   OnboardingOverviewResponse,
   KpiHealthStat,
   KpiHealthDetail,
+  AgentRelease,
 } from '@/types';
 
 // Auth
@@ -334,4 +335,21 @@ export const dashboardsApi = {
 
   delete: (id: string) =>
     api.delete(`/admin/dashboards/${id}`),
+};
+
+// Agent Releases
+export const agentReleasesApi = {
+  getAll: () =>
+    api.get<AgentRelease[]>('/admin/agent-releases'),
+
+  upload: (formData: FormData) =>
+    api.post<AgentRelease>('/admin/agent-releases', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  setLatest: (id: string) =>
+    api.patch<AgentRelease>(`/admin/agent-releases/${id}/set-latest`),
+
+  delete: (id: string) =>
+    api.delete(`/admin/agent-releases/${id}`),
 };

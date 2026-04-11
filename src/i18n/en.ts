@@ -51,6 +51,7 @@ export const en = {
     subscriptionPlans: 'Subscription Plans',
     kpiStore: 'KPI Store',
     agents: 'Agents',
+    agentReleases: 'Agent Releases',
     invitations: 'Invitations',
     auditLogs: 'Audit Logs',
     settings: 'Settings',

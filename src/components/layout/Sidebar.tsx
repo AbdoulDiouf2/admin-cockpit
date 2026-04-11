@@ -22,6 +22,7 @@ import {
   ListChecks,
   Bug,
   Activity,
+  FileDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -75,6 +76,7 @@ const navCategories = [
     titleKey: 'nav.category.system',
     items: [
       { path: '/agents', icon: Cpu, labelKey: 'nav.agents' },
+      { path: '/agent-releases', icon: FileDown, labelKey: 'nav.agentReleases' },
       { path: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
       { path: '/health', icon: HeartPulse, labelKey: 'nav.health' },
     ]
