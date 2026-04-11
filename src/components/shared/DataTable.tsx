@@ -143,11 +143,12 @@ export function DataTable<TData, TValue>({
                                 return (
                                     <DropdownMenuCheckboxItem
                                         key={column.id}
-                                        className="capitalize"
                                         checked={column.getIsVisible()}
                                         onCheckedChange={(value) => column.toggleVisibility(!!value)}
                                     >
-                                        {column.id}
+                                        {typeof column.columnDef.header === 'string' 
+                                            ? column.columnDef.header 
+                                            : column.id}
                                     </DropdownMenuCheckboxItem>
                                 )
                             })}
@@ -161,7 +162,7 @@ export function DataTable<TData, TValue>({
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className="whitespace-nowrap">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(

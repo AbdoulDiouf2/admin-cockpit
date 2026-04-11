@@ -71,8 +71,24 @@ export interface Bug {
     id: string;
     name: string;
   };
+  assignedAt?: string;
+  assignedBy?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+  };
   createdAt: string;
   updatedAt: string;
+  resolvedAt?: string;
+  resolvedBy?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+  };
   estimated_resolution?: string;
   comments?: BugComment[];
 }

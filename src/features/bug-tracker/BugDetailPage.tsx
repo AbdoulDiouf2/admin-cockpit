@@ -718,19 +718,36 @@ export function BugDetailPage() {
                     <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center border-2 border-orange-500 z-10 shrink-0">
                       <UserIcon className="h-4 w-4 text-orange-600" />
                     </div>
-                    {bug.status !== 'nouveau' && bug.status !== 'en_analyse' && <div className="w-0.5 h-10 bg-orange-200" />}
+                    {bug.status !== 'nouveau' && <div className="w-0.5 h-10 bg-orange-200" />}
                   </div>
                   <div className="pb-6">
-                    <p className="text-xs font-bold uppercase text-orange-600">Assigné</p>
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-xs font-bold uppercase text-orange-600">Assigné</p>
+                      {bug.assignedAt && (
+                        <p className="text-[10px] text-muted-foreground uppercase">
+                          le {format(new Date(bug.assignedAt), 'dd/MM/yyyy HH:mm')}
+                        </p>
+                      )}
+                    </div>
                     <p className="text-sm mt-1">
                       Assigné à {bug.assignedTo.name || `${(bug.assignedTo as any).firstName || ''} ${(bug.assignedTo as any).lastName || ''}`.trim() || '—'}
                     </p>
+                    {bug.assignedBy && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {bug.assignedBy.id === bug.assignedToId 
+                          ? "(Auto-assignation)" 
+                          : `Par ${bug.assignedBy.firstName || bug.assignedBy.lastName 
+                              ? `${bug.assignedBy.firstName || ''} ${bug.assignedBy.lastName || ''}`.trim()
+                              : bug.assignedBy.email || '—'}`
+                        }
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Étape 3 : Statut Actuel (Si différent de Nouveau/Analyse) */}
-              {bug.status !== 'nouveau' && (
+              {bug.status !== 'nouveau' && bug.status !== 'resolu' && bug.status !== 'ferme' && (
                 <div className="flex gap-4">
                   <div className="flex flex-col items-center">
                     <div className={`h-8 w-8 rounded-full ${statusVariants[bug.status]} bg-opacity-20 flex items-center justify-center border-2 ${statusVariants[bug.status].replace('bg-', 'border-')} z-10 shrink-0`}>
@@ -740,6 +757,32 @@ export function BugDetailPage() {
                   <div>
                     <p className="text-xs font-bold uppercase">{t(`bugTracker.status${bug.status.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`)}</p>
                     <p className="text-xs text-muted-foreground">Dernière mise à jour</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Étape 4 : Résolution (Si résolu ou fermé) */}
+              {(bug.status === 'resolu' || bug.status === 'ferme') && (
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-500 z-10 shrink-0">
+                      <Clock className="h-4 w-4 text-green-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase text-green-600">Résolu</p>
+                    {bug.resolvedAt && (
+                      <p className="text-xs text-muted-foreground">
+                        le {format(new Date(bug.resolvedAt), 'dd/MM/yyyy HH:mm')}
+                      </p>
+                    )}
+                    {bug.resolvedBy && (
+                      <p className="text-sm mt-1">
+                        Par {bug.resolvedBy.firstName || bug.resolvedBy.lastName 
+                          ? `${bug.resolvedBy.firstName || ''} ${bug.resolvedBy.lastName || ''}`.trim()
+                          : bug.resolvedBy.email || '—'}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
