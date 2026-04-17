@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2, KeyRound } from 'lucide-react';
+import { AlertCircle, Loader2, KeyRound, CheckCircle2 } from 'lucide-react';
 import { authApi } from '@/api';
 
 export function ResetPasswordPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
@@ -15,6 +14,7 @@ export function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +33,8 @@ export function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      await authApi.resetPassword({ token, password });
-      alert('Mot de passe réinitialisé avec succès !');
-      navigate('/login');
+      await authApi.resetPassword({ token, newPassword: password });
+      setIsSuccess(true);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Une erreur est survenue lors de la réinitialisation.');
     } finally {
@@ -101,6 +100,23 @@ export function ResetPasswordPage() {
       {/* Right side: form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 bg-background relative">
         <div className="w-full max-w-[400px] space-y-8">
+          {isSuccess ? (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">Mot de passe mis à jour</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.
+                </p>
+              </div>
+              <Button asChild className="w-full h-12 rounded-xl">
+                <Link to="/login">Se connecter →</Link>
+              </Button>
+            </div>
+          ) : (
+          <>
           <div className="space-y-2">
             <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
               <KeyRound className="h-6 w-6 text-primary" />
@@ -153,6 +169,8 @@ export function ResetPasswordPage() {
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Mettre à jour'}
             </Button>
           </form>
+          </>
+          )}
         </div>
       </div>
     </div>
