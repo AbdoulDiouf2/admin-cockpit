@@ -151,6 +151,8 @@ export const fr = {
     role: 'Rôle',
     active: 'Actif',
     inactive: 'Inactif',
+    verified: 'Vérifié',
+    notVerified: 'Non vérifié',
     lastLogin: 'Dernière connexion',
     editUser: "Modifier l'utilisateur",
     deleteUser: "Supprimer l'utilisateur",
