@@ -36,7 +36,6 @@ interface FormValues {
     firstName: string;
     lastName: string;
     email: string;
-    password: string;
     organizationId: string;
     roleId: string;
 }
@@ -53,7 +52,6 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
         firstName: z.string().min(2, t('users.valFirstName')),
         lastName: z.string().min(2, t('users.valLastName')),
         email: z.string().email(t('users.valEmail')),
-        password: z.string().min(8, t('users.valPassword')),
         organizationId: z.string().min(1, t('users.valOrg')),
         roleId: z.string().min(1, t('users.valRole')),
     });
@@ -69,7 +67,6 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
             firstName: '',
             lastName: '',
             email: '',
-            password: '',
             organizationId: '',
             roleId: ''
         },
@@ -154,24 +151,6 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
                                         <Input
                                             type="email"
                                             placeholder="utilisateur@entreprise.com"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('users.tempPassword')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="password"
-                                            placeholder="••••••••"
                                             {...field}
                                         />
                                     </FormControl>
