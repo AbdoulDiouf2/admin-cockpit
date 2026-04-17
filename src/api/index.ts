@@ -42,7 +42,7 @@ export const authApi = {
     api.patch<User>('/users/me', data),
 
   forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
+    api.post('/auth/forgot-password', { email, source: 'admin' }),
 
   resetPassword: (data: any) =>
     api.post('/auth/reset-password', data),
