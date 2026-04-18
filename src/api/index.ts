@@ -302,12 +302,19 @@ export const billingAdminApi = {
 };
 
 // System config (global, superadmin only)
-export const systemConfigApi = {
-  get: () =>
-    api.get<{ notificationPreferences: Record<string, unknown> | null }>('/admin/system-config'),
+export interface SystemConfig {
+  notificationPreferences: Record<string, unknown> | null;
+  featureFlags: {
+    claudeNlq?: boolean;
+    claudeInsights?: boolean;
+  } | null;
+}
 
-  update: (data: { notificationPreferences: Record<string, unknown> }) =>
-    api.patch<{ notificationPreferences: Record<string, unknown> | null }>('/admin/system-config', data),
+export const systemConfigApi = {
+  get: () => api.get<SystemConfig>('/admin/system-config'),
+
+  update: (data: Partial<Pick<SystemConfig, 'notificationPreferences' | 'featureFlags'>>) =>
+    api.patch<SystemConfig>('/admin/system-config', data),
 };
 
 // Onboarding Overview

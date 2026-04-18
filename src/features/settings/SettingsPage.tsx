@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard } from 'lucide-react';
+import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -47,7 +47,7 @@ const passwordSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
-type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'shortcuts';
+type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'ai';
 
 // ─── Notification prefs ───────────────────────────────────────────────────────
 
@@ -62,6 +62,15 @@ const DEFAULT_NOTIF = {
 };
 
 type NotifPrefs = typeof DEFAULT_NOTIF;
+
+// ─── Feature flags (AI) ───────────────────────────────────────────────────────
+
+const DEFAULT_FLAGS = {
+  claudeNlq: true,
+  claudeInsights: true,
+};
+
+type FeatureFlags = typeof DEFAULT_FLAGS;
 
 // ─── Nav groups ───────────────────────────────────────────────────────────────
 
@@ -78,6 +87,7 @@ const NAV_GROUPS = [
     groupKey: 'settings.groupGeneral',
     items: [
       { key: 'notifications' as SectionKey, icon: Bell,     labelKey: 'settings.sectionNotifications' },
+      { key: 'ai'            as SectionKey, icon: Bot,      labelKey: 'settings.sectionAi' },
       { key: 'shortcuts'     as SectionKey, icon: Keyboard, labelKey: 'settings.sectionShortcuts' },
     ],
   },
@@ -133,6 +143,27 @@ export function SettingsPage() {
       : [...recipients, userId];
     savePrefs({ notif: notifPrefs, recipients: next });
   }, [notifPrefs, recipients, savePrefs]);
+
+  // ── Feature flags (AI) ─────────────────────────────────────────────────────
+
+  const featureFlags: FeatureFlags = { ...DEFAULT_FLAGS, ...(sysConfig?.featureFlags ?? {}) };
+
+  const { mutate: saveFlags } = useMutation({
+    mutationFn: (flags: FeatureFlags) =>
+      systemConfigApi.update({ featureFlags: flags }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-config'] });
+      toast({ title: t('common.success'), description: t('settings.aiSaved') });
+    },
+    onError: () => {
+      toast({ title: t('common.error'), description: t('settings.aiError'), variant: 'destructive' });
+    },
+  });
+
+  const toggleFlag = useCallback((key: keyof FeatureFlags) => {
+    const next = { ...featureFlags, [key]: !featureFlags[key] };
+    saveFlags(next);
+  }, [featureFlags, saveFlags]);
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -532,6 +563,37 @@ export function SettingsPage() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* ── Intelligence Artificielle ── */}
+          {activeSection === 'ai' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  {t('settings.sectionAi')}
+                </CardTitle>
+                <CardDescription>{t('settings.sectionAiDesc')}</CardDescription>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-2 divide-y divide-border">
+                {([
+                  { key: 'claudeNlq',      labelKey: 'settings.aiClaudeNlq',      descKey: 'settings.aiClaudeNlqDesc' },
+                  { key: 'claudeInsights', labelKey: 'settings.aiClaudeInsights', descKey: 'settings.aiClaudeInsightsDesc' },
+                ] as { key: keyof FeatureFlags; labelKey: string; descKey: string }[]).map(({ key, labelKey, descKey }) => (
+                  <div key={key} className="flex items-center justify-between py-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">{t(labelKey)}</Label>
+                      <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+                    </div>
+                    <Switch
+                      checked={featureFlags[key]}
+                      onCheckedChange={() => toggleFlag(key)}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
 
           {/* ── Raccourcis clavier ── */}
