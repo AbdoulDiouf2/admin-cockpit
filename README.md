@@ -201,8 +201,9 @@ GET    /api/admin/users                   # Liste des utilisateurs
 GET    /api/admin/users/:id               # Détail utilisateur
 PATCH  /api/admin/users/:id              # Modifier utilisateur
 DELETE /api/admin/users/:id              # Supprimer utilisateur
-GET    /api/admin/audit-logs             # Logs d'audit (filtres)
-GET    /api/admin/audit-logs/event-types # Types d'événements
+GET    /api/admin/audit-logs             # Logs d'audit (filtres : userId, event, dates, pagination)
+GET    /api/admin/audit-logs/:id         # Détail d'un log d'audit
+GET    /api/logs/audit/events            # Types d'événements disponibles
 ```
 
 ### Plans d'abonnement
@@ -235,21 +236,26 @@ DELETE /api/admin/kpi-packs/:id          # Toggle isActive (soft delete)
 
 ### Rôles & Permissions
 ```
-GET    /api/roles              # Liste des rôles
-GET    /api/roles/:id          # Détail d'un rôle
-GET    /api/roles/permissions  # Liste des permissions
-POST   /api/roles              # Créer un rôle
-PATCH  /api/roles/:id          # Modifier un rôle
-DELETE /api/roles/:id          # Supprimer un rôle
+GET    /api/admin/roles              # Liste de tous les rôles (cross-org)
+GET    /api/admin/roles/:id          # Détail d'un rôle
+GET    /api/roles/permissions        # Liste des permissions (déjà cross-org)
+POST   /api/admin/roles              # Créer un rôle (body: organizationId requis)
+PATCH  /api/admin/roles/:id          # Modifier un rôle
+DELETE /api/admin/roles/:id          # Supprimer un rôle
 ```
 
 ### Agents
 ```
-GET  /api/agents                         # Statut de tous les agents
-GET  /api/agents/:id                     # Détail d'un agent
-POST /api/agents/generate-token          # Générer un token agent
-POST /api/agents/:id/regenerate-token    # Regénérer le token
-POST /api/agents/:id/revoke              # Révoquer le token
+GET  /api/admin/agents                        # Statut de tous les agents (cross-org)
+GET  /api/admin/agents/:id                    # Détail d'un agent
+POST /api/admin/agents/generate-token         # Générer un token (body: organizationId requis)
+POST /api/admin/agents/:id/regenerate-token   # Regénérer le token
+POST /api/admin/agents/:id/revoke             # Révoquer le token
+POST /api/admin/agents/:id/test-connection    # Tester la connexion SQL en temps réel
+GET  /api/admin/agents/:id/logs               # Logs de l'agent (paginés)
+GET  /api/admin/agents/:id/jobs               # Jobs SQL (paginés, filtrables)
+GET  /api/admin/agents/:id/job-stats          # Statistiques jobs par statut
+DELETE /api/admin/agents/:id                  # Supprimer un agent
 ```
 
 ### Bug Tracker (Ticketing)
