@@ -78,7 +78,12 @@ export function EditOrganizationModal({
 
     const mutation = useMutation({
         mutationFn: (values: FormValues) =>
-            organizationsApi.update(organization!.id, values),
+            organizationsApi.update(organization!.id, {
+                name: values.name,
+                size: values.size,
+                plan: values.planId,
+                sageType: values.sageType,
+            } as any),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['organizations'] });
             toast({
