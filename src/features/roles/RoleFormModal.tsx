@@ -38,7 +38,7 @@ import type { Role, Permission } from '@/types';
 
 const formSchema = z.object({
     organizationId: z.string().optional(),
-    name: z.string().min(2, 'Le nom du rôle est requis'),
+    name: z.string().min(2, 'Le nom du rôle est requis').or(z.literal('')),
     description: z.string().optional(),
     permissionIds: z
         .array(z.string())
@@ -61,6 +61,7 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
     const { data: organizations, isLoading: orgsLoading } = useOrganizations();
 
     const isEditMode = !!role;
+    const isSystemRole = !!(role as any)?.isSystem;
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -103,11 +104,11 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
     const mutation = useMutation({
         mutationFn: (values: FormValues) => {
             if (isEditMode) {
-                return rolesApi.update(role!.id, {
-                    name: values.name,
-                    description: values.description,
-                    permissionIds: values.permissionIds,
-                } as any);
+                // Pour les rôles système : envoyer uniquement permissionIds (nom/desc protégés)
+                const payload = isSystemRole
+                    ? { permissionIds: values.permissionIds }
+                    : { name: values.name, description: values.description, permissionIds: values.permissionIds };
+                return rolesApi.update(role!.id, payload as any);
             }
             return rolesApi.create({
                 organizationId: values.organizationId!,
@@ -142,12 +143,16 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
             <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditMode ? t('roles.editRole') : t('roles.createRole')}
+                        {isSystemRole
+                            ? `Permissions — ${role?.name}`
+                            : isEditMode ? t('roles.editRole') : t('roles.createRole')}
                     </DialogTitle>
                     <DialogDescription>
-                        {isEditMode
-                            ? `Modifier le rôle "${role?.name}"`
-                            : 'Créer un nouveau rôle personnalisé avec ses permissions'}
+                        {isSystemRole
+                            ? 'Rôle système : seules les permissions peuvent être modifiées.'
+                            : isEditMode
+                                ? `Modifier le rôle "${role?.name}"`
+                                : 'Créer un nouveau rôle personnalisé avec ses permissions'}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -186,39 +191,43 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
                             />
                         )}
 
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('roles.roleName')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Ex: Analyste financier"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {!isSystemRole && (
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('roles.roleName')}</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Ex: Analyste financier"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('roles.description')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Description du rôle (optionnel)"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('roles.description')}</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Description du rôle (optionnel)"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
 
                         <FormField
                             control={form.control}

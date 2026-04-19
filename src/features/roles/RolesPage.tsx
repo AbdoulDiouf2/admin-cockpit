@@ -121,13 +121,20 @@ export function RolesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {role.isSystem ? (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                            title="Les rôles système sont gérés par InsightSage et ne peuvent pas être modifiés"
-                          >
-                            <Lock className="h-3.5 w-3.5" />
-                            Protégé
-                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Ouvrir menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => setFormRole(role)}>
+                                Modifier les permissions
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ) : (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
