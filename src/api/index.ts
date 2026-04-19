@@ -128,7 +128,7 @@ export const rolesApi = {
 // Agents
 export const agentsApi = {
   getStatus: () =>
-    api.get('/agents/status'),
+    api.get('/admin/agents'),
 
   getById: (id: string) =>
     api.get<Agent>(`/agents/${id}`),
