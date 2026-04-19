@@ -19,17 +19,24 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { agentsApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Copy, Key, Loader2 } from 'lucide-react';
+import { useOrganizations } from '@/hooks/use-api';
 
 const formSchema = z.object({
+    organizationId: z.string().min(1, "L'organisation est requise"),
     name: z.string().optional(),
-    force: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,10 +51,11 @@ export function GenerateTokenModal({ open, onOpenChange }: GenerateTokenModalPro
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+    const { data: organizations, isLoading: orgsLoading } = useOrganizations();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: { name: '', force: false },
+        defaultValues: { organizationId: '', name: '' },
     });
 
     const handleClose = (open: boolean) => {
@@ -59,7 +67,8 @@ export function GenerateTokenModal({ open, onOpenChange }: GenerateTokenModalPro
     };
 
     const mutation = useMutation({
-        mutationFn: (values: FormValues) => agentsApi.generateToken(values),
+        mutationFn: (values: FormValues) =>
+            agentsApi.generateToken({ organizationId: values.organizationId, name: values.name }),
         onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ['agents-status'] });
             const token = (response.data as any)?.token || (response.data as any)?.agent_token;
@@ -135,6 +144,35 @@ export function GenerateTokenModal({ open, onOpenChange }: GenerateTokenModalPro
                         >
                             <FormField
                                 control={form.control}
+                                name="organizationId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Organisation</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            disabled={orgsLoading}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sélectionner une organisation" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {organizations?.map((org) => (
+                                                    <SelectItem key={org.id} value={org.id}>
+                                                        {org.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
@@ -146,24 +184,6 @@ export function GenerateTokenModal({ open, onOpenChange }: GenerateTokenModalPro
                                             />
                                         </FormControl>
                                         <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="force"
-                                render={({ field }) => (
-                                    <FormItem className="flex items-center gap-3 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">
-                                            {t('agents.forceRegenerate')}
-                                        </FormLabel>
                                     </FormItem>
                                 )}
                             />

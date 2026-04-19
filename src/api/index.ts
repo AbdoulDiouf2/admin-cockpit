@@ -104,55 +104,55 @@ export const usersApi = {
     api.post('/auth/invite', data),
 };
 
-// Roles
+// Roles (routes admin dédiées — cross-org pour superadmin)
 export const rolesApi = {
   getAll: () =>
-    api.get<Role[]>('/roles'),
+    api.get<Role[]>('/admin/roles'),
 
   getById: (id: string) =>
-    api.get<Role>(`/roles/${id}`),
+    api.get<Role>(`/admin/roles/${id}`),
 
   getPermissions: () =>
-    api.get<Permission[]>('/roles/permissions'),
+    api.get<Permission[]>('/roles/permissions'), // déjà cross-org, pas de changement
 
-  create: (data: { name: string; description?: string; permissionIds: string[] }) =>
-    api.post<Role>('/roles', data),
+  create: (data: { organizationId: string; name: string; description?: string; permissionIds: string[] }) =>
+    api.post<Role>('/admin/roles', data),
 
   update: (id: string, data: Partial<Role>) =>
-    api.patch<Role>(`/roles/${id}`, data),
+    api.patch<Role>(`/admin/roles/${id}`, data),
 
   delete: (id: string) =>
-    api.delete(`/roles/${id}`),
+    api.delete(`/admin/roles/${id}`),
 };
 
-// Agents
+// Agents (toutes les routes via /admin/ pour accès cross-org superadmin)
 export const agentsApi = {
   getStatus: () =>
     api.get('/admin/agents'),
 
   getById: (id: string) =>
-    api.get<Agent>(`/agents/${id}`),
+    api.get<Agent>(`/admin/agents/${id}`),
 
-  generateToken: (data: { name?: string; force?: boolean }) =>
-    api.post('/agents/generate-token', data),
+  generateToken: (data: { organizationId: string; name?: string }) =>
+    api.post('/admin/agents/generate-token', data),
 
   regenerateToken: (id: string) =>
-    api.post(`/agents/${id}/regenerate-token`),
+    api.post(`/admin/agents/${id}/regenerate-token`),
 
   revokeToken: (id: string) =>
-    api.post(`/agents/${id}/revoke`),
+    api.post(`/admin/agents/${id}/revoke`),
 
   testConnection: (id: string) =>
-    api.post(`/agents/${id}/test-connection`),
+    api.post(`/admin/agents/${id}/test-connection`),
 
   getJobStats: (id: string) =>
-    api.get<{ PENDING: number; RUNNING: number; COMPLETED: number; FAILED: number; total: number }>(`/agents/${id}/job-stats`),
+    api.get<{ PENDING: number; RUNNING: number; COMPLETED: number; FAILED: number; total: number }>(`/admin/agents/${id}/job-stats`),
 
   getLogs: (id: string, params?: { page?: number; limit?: number; search?: string }) =>
-    api.get<AgentLogsResponse>(`/agents/${id}/logs`, { params }),
+    api.get<AgentLogsResponse>(`/admin/agents/${id}/logs`, { params }),
 
   getJobs: (id: string, params?: { page?: number; limit?: number; status?: string; search?: string }) =>
-    api.get<any>(`/agents/${id}/jobs`, { params }),
+    api.get<any>(`/admin/agents/${id}/jobs`, { params }),
 
   delete: (id: string) =>
     api.delete(`/admin/agents/${id}`),
@@ -235,7 +235,7 @@ export const kpiPacksApi = {
     api.delete<KpiPack>(`/admin/kpi-packs/${id}`),
 };
 
-// Audit Logs
+// Audit Logs (routes admin — cross-org pour superadmin)
 export const auditLogsApi = {
   getAll: (params?: {
     userId?: string;
@@ -249,14 +249,14 @@ export const auditLogsApi = {
     const { events, ...rest } = params ?? {};
     const queryParams: Record<string, unknown> = { ...rest };
     if (events && events.length > 0) queryParams.events = events.join(',');
-    return api.get<PaginatedResponse<AuditLog>>('/logs/audit', { params: queryParams });
+    return api.get<PaginatedResponse<AuditLog>>('/admin/audit-logs', { params: queryParams });
   },
 
   getById: (id: string) =>
-    api.get<AuditLog>(`/logs/audit/${id}`),
+    api.get<AuditLog>(`/admin/audit-logs/${id}`),
 
   getEventTypes: () =>
-    api.get<{ event: string; count: number }[]>('/logs/audit/events'),
+    api.get<{ event: string; count: number }[]>('/logs/audit/events'), // conservé (endpoint public cross-org)
 };
 
 // Health

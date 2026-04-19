@@ -19,6 +19,13 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,10 +33,11 @@ import { rolesApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
-import { useRolePermissions } from '@/hooks/use-api';
+import { useRolePermissions, useOrganizations } from '@/hooks/use-api';
 import type { Role, Permission } from '@/types';
 
 const formSchema = z.object({
+    organizationId: z.string().optional(),
     name: z.string().min(2, 'Le nom du rôle est requis'),
     description: z.string().optional(),
     permissionIds: z
@@ -50,12 +58,14 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const { data: permissions, isLoading: permissionsLoading } = useRolePermissions();
+    const { data: organizations, isLoading: orgsLoading } = useOrganizations();
 
     const isEditMode = !!role;
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            organizationId: '',
             name: '',
             description: '',
             permissionIds: [],
@@ -66,13 +76,14 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
         if (open) {
             if (role) {
                 form.reset({
+                    organizationId: (role as any).organizationId || '',
                     name: role.name,
                     description: role.description || '',
                     permissionIds:
                         role.permissions?.map((rp) => rp.permissionId) || [],
                 });
             } else {
-                form.reset({ name: '', description: '', permissionIds: [] });
+                form.reset({ organizationId: '', name: '', description: '', permissionIds: [] });
             }
         }
     }, [open, role, form]);
@@ -99,6 +110,7 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
                 } as any);
             }
             return rolesApi.create({
+                organizationId: values.organizationId!,
                 name: values.name,
                 description: values.description,
                 permissionIds: values.permissionIds,
@@ -143,6 +155,37 @@ export function RoleFormModal({ open, onOpenChange, role }: RoleFormModalProps) 
                         onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
                         className="space-y-4"
                     >
+                        {!isEditMode && (
+                            <FormField
+                                control={form.control}
+                                name="organizationId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Organisation</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            disabled={orgsLoading}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sélectionner une organisation" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {organizations?.map((org) => (
+                                                    <SelectItem key={org.id} value={org.id}>
+                                                        {org.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
                         <FormField
                             control={form.control}
                             name="name"
