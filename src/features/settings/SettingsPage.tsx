@@ -649,7 +649,7 @@ export function SettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Panel Claude — statut clé API */}
+              {/* Panel Claude — statut clé API uniquement */}
               {aiFlags.nlqProvider === 'claude' && (
                 <Card>
                   <CardContent className="pt-5 pb-5">
@@ -658,10 +658,29 @@ export function SettingsPage() {
                         <p className="text-sm font-medium">{t('settings.aiClaudeApiKey')}</p>
                       </div>
                       <div className="flex items-center gap-1.5 text-sm">
-                        {/* On ne connaît pas côté front si la clé est définie — on l'indique */}
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                         <span className="text-green-600 dark:text-green-400 text-xs">{t('settings.aiClaudeApiKeySet')}</span>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Insights — visible pour tout provider actif */}
+              {aiFlags.nlqProvider !== 'none' && (
+                <Card>
+                  <CardContent className="pt-2 pb-2">
+                    <div className="flex items-center justify-between py-3">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium">{t('settings.aiClaudeInsights')}</Label>
+                        <p className="text-xs text-muted-foreground">{t('settings.aiClaudeInsightsDesc')}</p>
+                      </div>
+                      <Switch
+                        checked={aiFlags.claudeInsights ?? true}
+                        onCheckedChange={() =>
+                          saveFlags({ ...aiFlags, localLlmUrl: localUrl, localLlmModel: localModel, claudeInsights: !aiFlags.claudeInsights })
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -735,23 +754,6 @@ export function SettingsPage() {
                 </Card>
               )}
 
-              {/* Insights toggle — indépendant du provider NLQ */}
-              <Card>
-                <CardContent className="pt-2 pb-2">
-                  <div className="flex items-center justify-between py-3">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm font-medium">{t('settings.aiClaudeInsights')}</Label>
-                      <p className="text-xs text-muted-foreground">{t('settings.aiClaudeInsightsDesc')}</p>
-                    </div>
-                    <Switch
-                      checked={aiFlags.claudeInsights ?? true}
-                      onCheckedChange={() =>
-                        saveFlags({ ...aiFlags, localLlmUrl: localUrl, localLlmModel: localModel, claudeInsights: !aiFlags.claudeInsights })
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
