@@ -302,12 +302,18 @@ export const billingAdminApi = {
 };
 
 // System config (global, superadmin only)
+export type NlqProvider = 'claude' | 'local' | 'none';
+
+export interface AiFeatureFlags {
+  nlqProvider?: NlqProvider;
+  localLlmUrl?: string;
+  localLlmModel?: string;
+  claudeInsights?: boolean;
+}
+
 export interface SystemConfig {
   notificationPreferences: Record<string, unknown> | null;
-  featureFlags: {
-    claudeNlq?: boolean;
-    claudeInsights?: boolean;
-  } | null;
+  featureFlags: AiFeatureFlags | null;
 }
 
 export const systemConfigApi = {
@@ -315,6 +321,11 @@ export const systemConfigApi = {
 
   update: (data: Partial<Pick<SystemConfig, 'notificationPreferences' | 'featureFlags'>>) =>
     api.patch<SystemConfig>('/admin/system-config', data),
+};
+
+export const aiApi = {
+  getLocalModels: (url: string) =>
+    api.get<{ models: string[] }>(`/admin/ai/local-models?url=${encodeURIComponent(url)}`),
 };
 
 // Onboarding Overview

@@ -1,13 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/components/shared/ThemeProvider';
 import { useToast } from '@/hooks/use-toast';
-import { authApi, systemConfigApi } from '@/api';
+import { authApi, systemConfigApi, aiApi, type NlqProvider } from '@/api';
 import { useAdminUsers } from '@/hooks/use-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -24,7 +24,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard, Bot } from 'lucide-react';
+import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard, Bot, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -63,14 +64,14 @@ const DEFAULT_NOTIF = {
 
 type NotifPrefs = typeof DEFAULT_NOTIF;
 
-// ─── Feature flags (AI) ───────────────────────────────────────────────────────
+// ─── AI config (dans featureFlags) ───────────────────────────────────────────
 
 const DEFAULT_FLAGS = {
-  claudeNlq: true,
+  nlqProvider: 'claude' as NlqProvider,
+  localLlmUrl: 'http://localhost:11434',
+  localLlmModel: '',
   claudeInsights: true,
 };
-
-type FeatureFlags = typeof DEFAULT_FLAGS;
 
 // ─── Nav groups ───────────────────────────────────────────────────────────────
 
@@ -144,12 +145,26 @@ export function SettingsPage() {
     savePrefs({ notif: notifPrefs, recipients: next });
   }, [notifPrefs, recipients, savePrefs]);
 
-  // ── Feature flags (AI) ─────────────────────────────────────────────────────
+  // ── AI config ──────────────────────────────────────────────────────────────
 
-  const featureFlags: FeatureFlags = { ...DEFAULT_FLAGS, ...(sysConfig?.featureFlags ?? {}) };
+  const aiFlags = { ...DEFAULT_FLAGS, ...(sysConfig?.featureFlags ?? {}) };
+  const [localUrl, setLocalUrl] = useState(aiFlags.localLlmUrl);
+  const [localModel, setLocalModel] = useState(aiFlags.localLlmModel);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isBrowsing, setIsBrowsing] = useState(false);
+  const urlRef = useRef(localUrl);
+  urlRef.current = localUrl;
+
+  // Sync state quand sysConfig charge
+  useEffect(() => {
+    if (sysConfig?.featureFlags) {
+      setLocalUrl((sysConfig.featureFlags as any).localLlmUrl ?? 'http://localhost:11434');
+      setLocalModel((sysConfig.featureFlags as any).localLlmModel ?? '');
+    }
+  }, [sysConfig]);
 
   const { mutate: saveFlags } = useMutation({
-    mutationFn: (flags: FeatureFlags) =>
+    mutationFn: (flags: typeof DEFAULT_FLAGS) =>
       systemConfigApi.update({ featureFlags: flags }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-config'] });
@@ -160,10 +175,29 @@ export function SettingsPage() {
     },
   });
 
-  const toggleFlag = useCallback((key: keyof FeatureFlags) => {
-    const next = { ...featureFlags, [key]: !featureFlags[key] };
-    saveFlags(next);
-  }, [featureFlags, saveFlags]);
+  const setProvider = useCallback((provider: NlqProvider) => {
+    saveFlags({ ...aiFlags, nlqProvider: provider, localLlmUrl: localUrl, localLlmModel: localModel });
+  }, [aiFlags, localUrl, localModel, saveFlags]);
+
+  const saveLocalConfig = useCallback(() => {
+    saveFlags({ ...aiFlags, localLlmUrl: localUrl, localLlmModel: localModel });
+  }, [aiFlags, localUrl, localModel, saveFlags]);
+
+  const browseModels = useCallback(async () => {
+    if (!urlRef.current) {
+      toast({ title: t('common.error'), description: t('settings.aiLocalUrlRequired'), variant: 'destructive' });
+      return;
+    }
+    setIsBrowsing(true);
+    try {
+      const res = await aiApi.getLocalModels(urlRef.current);
+      setAvailableModels(res.data.models);
+    } catch {
+      toast({ title: t('common.error'), description: t('settings.aiLocalFetchError'), variant: 'destructive' });
+    } finally {
+      setIsBrowsing(false);
+    }
+  }, [t, toast]);
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -567,33 +601,158 @@ export function SettingsPage() {
 
           {/* ── Intelligence Artificielle ── */}
           {activeSection === 'ai' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5" />
-                  {t('settings.sectionAi')}
-                </CardTitle>
-                <CardDescription>{t('settings.sectionAiDesc')}</CardDescription>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-2 divide-y divide-border">
-                {([
-                  { key: 'claudeNlq',      labelKey: 'settings.aiClaudeNlq',      descKey: 'settings.aiClaudeNlqDesc' },
-                  { key: 'claudeInsights', labelKey: 'settings.aiClaudeInsights', descKey: 'settings.aiClaudeInsightsDesc' },
-                ] as { key: keyof FeatureFlags; labelKey: string; descKey: string }[]).map(({ key, labelKey, descKey }) => (
-                  <div key={key} className="flex items-center justify-between py-4">
+            <div className="space-y-4">
+              {/* Sélecteur de moteur */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    {t('settings.sectionAi')}
+                  </CardTitle>
+                  <CardDescription>{t('settings.sectionAiDesc')}</CardDescription>
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-6 space-y-3">
+                  <Label className="text-sm font-medium">{t('settings.aiProviderLabel')}</Label>
+
+                  {/* Radio group custom */}
+                  {([
+                    { value: 'claude' as NlqProvider, labelKey: 'settings.aiProviderClaude', descKey: 'settings.aiProviderClaudeDesc' },
+                    { value: 'local'  as NlqProvider, labelKey: 'settings.aiProviderLocal',  descKey: 'settings.aiProviderLocalDesc' },
+                    { value: 'none'   as NlqProvider, labelKey: 'settings.aiProviderNone',   descKey: 'settings.aiProviderNoneDesc' },
+                  ]).map(({ value, labelKey, descKey }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setProvider(value)}
+                      className={cn(
+                        'w-full flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all',
+                        aiFlags.nlqProvider === value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/30'
+                      )}
+                    >
+                      <div className={cn(
+                        'mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center',
+                        aiFlags.nlqProvider === value ? 'border-primary' : 'border-muted-foreground/40'
+                      )}>
+                        {aiFlags.nlqProvider === value && (
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{t(labelKey)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t(descKey)}</p>
+                      </div>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Panel Claude — statut clé API */}
+              {aiFlags.nlqProvider === 'claude' && (
+                <Card>
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{t('settings.aiClaudeApiKey')}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        {/* On ne connaît pas côté front si la clé est définie — on l'indique */}
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span className="text-green-600 dark:text-green-400 text-xs">{t('settings.aiClaudeApiKeySet')}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Panel LLM Local */}
+              {aiFlags.nlqProvider === 'local' && (
+                <Card>
+                  <CardContent className="pt-5 space-y-4">
+                    {/* URL */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">{t('settings.aiLocalUrl')}</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={localUrl}
+                          onChange={e => setLocalUrl(e.target.value)}
+                          placeholder={t('settings.aiLocalUrlPlaceholder')}
+                          className="flex-1 font-mono text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={browseModels}
+                          disabled={isBrowsing}
+                        >
+                          {isBrowsing
+                            ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t('settings.aiLocalBrowsing')}</>
+                            : t('settings.aiLocalBrowse')
+                          }
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Sélecteur modèle */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">{t('settings.aiLocalModel')}</Label>
+                      {availableModels.length > 0 ? (
+                        <Select
+                          value={localModel}
+                          onValueChange={val => setLocalModel(val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('settings.aiLocalModelPlaceholder')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableModels.map(m => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={localModel}
+                          onChange={e => setLocalModel(e.target.value)}
+                          placeholder={t('settings.aiLocalModelPlaceholder')}
+                          className="font-mono text-sm"
+                        />
+                      )}
+                      {availableModels.length === 0 && (
+                        <p className="text-xs text-muted-foreground">{t('settings.aiLocalNoModels')}</p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button type="button" size="sm" onClick={saveLocalConfig}>
+                        {t('common.save') || 'Enregistrer'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Insights toggle — indépendant du provider NLQ */}
+              <Card>
+                <CardContent className="pt-2 pb-2">
+                  <div className="flex items-center justify-between py-3">
                     <div className="space-y-0.5">
-                      <Label className="text-sm font-medium">{t(labelKey)}</Label>
-                      <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+                      <Label className="text-sm font-medium">{t('settings.aiClaudeInsights')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('settings.aiClaudeInsightsDesc')}</p>
                     </div>
                     <Switch
-                      checked={featureFlags[key]}
-                      onCheckedChange={() => toggleFlag(key)}
+                      checked={aiFlags.claudeInsights ?? true}
+                      onCheckedChange={() =>
+                        saveFlags({ ...aiFlags, localLlmUrl: localUrl, localLlmModel: localModel, claudeInsights: !aiFlags.claudeInsights })
+                      }
                     />
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* ── Raccourcis clavier ── */}
