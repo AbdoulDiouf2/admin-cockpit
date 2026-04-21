@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,29 @@ export function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isVerifyingToken, setIsVerifyingToken] = useState(true);
+  const [isTokenInvalid, setIsTokenInvalid] = useState(false);
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (!token) {
+        setIsVerifyingToken(false);
+        return;
+      }
+
+      try {
+        await authApi.verifyResetToken(token);
+        setIsTokenInvalid(false);
+      } catch (err) {
+        console.error('Token verification failed:', err);
+        setIsTokenInvalid(true);
+      } finally {
+        setIsVerifyingToken(false);
+      }
+    };
+
+    verifyToken();
+  }, [token]);
 
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
 
@@ -47,19 +70,30 @@ export function ResetPasswordPage() {
     }
   };
 
-  if (!token) {
+  if (isVerifyingToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-muted-foreground animate-pulse font-medium">Vérification de la validité du lien...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!token || isTokenInvalid) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center space-y-4">
           <div className="h-20 w-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
             <AlertCircle className="h-10 w-10 text-destructive" />
           </div>
-          <h1 className="text-2xl font-bold">Lien invalide</h1>
+          <h1 className="text-2xl font-bold">Lien invalide ou expiré</h1>
           <p className="text-muted-foreground">
-            Ce lien de réinitialisation est invalide ou a expiré. Veuillez recommencer la procédure.
+            Ce lien de réinitialisation est invalide, a déjà été utilisé ou a expiré. Veuillez recommencer la procédure.
           </p>
           <Button asChild className="w-full">
-            <a href="/forgot-password">Demander un nouveau lien</a>
+            <Link to="/forgot-password">Demander un nouveau lien</Link>
           </Button>
         </div>
       </div>
