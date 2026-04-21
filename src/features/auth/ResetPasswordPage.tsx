@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2, KeyRound, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Loader2, KeyRound, CheckCircle2, Eye, EyeOff, Check } from 'lucide-react';
 import { authApi } from '@/api';
 
 export function ResetPasswordPage() {
@@ -15,6 +16,10 @@ export function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,28 +141,65 @@ export function ResetPasswordPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Nouveau mot de passe</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-12 bg-muted/30 border-transparent focus:border-primary/30 focus:ring-primary/20 transition-all rounded-xl"
-                />
+                <div className="relative group">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 bg-muted/30 border-transparent focus:border-primary/30 focus:ring-primary/20 transition-all rounded-xl pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="h-12 bg-muted/30 border-transparent focus:border-primary/30 focus:ring-primary/20 transition-all rounded-xl"
-                />
+                <div className="relative group">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className={cn(
+                      "h-12 bg-muted/30 border-transparent focus:ring-primary/20 transition-all rounded-xl pr-12",
+                      confirmPassword && !passwordsMatch && "border-destructive/50 focus:border-destructive/30",
+                      passwordsMatch && "border-primary/50 focus:border-primary/30"
+                    )}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    {passwordsMatch && (
+                      <Check className="h-5 w-5 text-primary animate-in zoom-in duration-300" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                {confirmPassword && !passwordsMatch && (
+                  <p className="text-[12px] text-destructive font-medium ml-1 animate-in fade-in slide-in-from-top-1">
+                    Les mots de passe ne correspondent pas
+                  </p>
+                )}
+                {passwordsMatch && (
+                  <p className="text-[12px] text-primary font-medium ml-1 animate-in fade-in slide-in-from-top-1">
+                    Les mots de passe correspondent
+                  </p>
+                )}
               </div>
             </div>
 
