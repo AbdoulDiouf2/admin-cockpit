@@ -509,6 +509,7 @@ export const fr = {
     notifNoAdmins: 'Aucun administrateur disponible',
     sectionAi: 'Intelligence Artificielle',
     sectionAiDesc: 'Choisissez le moteur IA pour la classification NLQ',
+    sectionStorage: 'Stockage',
     aiProviderLabel: 'Moteur de classification NLQ',
     aiProviderClaude: 'Claude (Anthropic)',
     aiProviderClaudeDesc: 'Utilise l\'API Anthropic Claude pour classifier les questions',

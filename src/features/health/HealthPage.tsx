@@ -10,7 +10,8 @@ import {
   XCircle,
   Clock,
   Server,
-  BookOpen
+  BookOpen,
+  HardDrive,
 } from 'lucide-react';
 import { healthApi } from '@/api';
 import { format } from 'date-fns';
@@ -57,6 +58,7 @@ export function HealthPage() {
   const dbOk = !dbError && dbHealth?.status === 'ok';
   const redisOk = dbHealth?.redis === 'connected';
   const mkdocsOk = dbHealth?.mkdocs === 'connected';
+  const minioOk = dbHealth?.minio === 'connected';
   const isFetching = apiFetching || dbFetching;
 
   return (
@@ -80,7 +82,7 @@ export function HealthPage() {
       </div>
 
       {/* Summary indicators */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {/* API Status */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -312,6 +314,70 @@ export function HealthPage() {
             )}
           </CardContent>
         </Card>
+        {/* MinIO Status */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base">MinIO</CardTitle>
+            </div>
+            {dbLoading ? (
+              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : minioOk ? (
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+            ) : (
+              <XCircle className="h-6 w-6 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('health.status')}</span>
+              {dbLoading ? (
+                <span className="text-sm text-muted-foreground">Vérification...</span>
+              ) : (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    minioOk
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : dbHealth?.minio === 'not_configured'
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  }`}
+                >
+                  {minioOk ? t('health.ok') : dbHealth?.minio === 'not_configured' ? 'Non configuré' : t('health.error')}
+                </span>
+              )}
+            </div>
+
+            {dbHealth && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Connexion</span>
+                <span className="text-sm font-mono">{dbHealth.minio}</span>
+              </div>
+            )}
+
+            {minioOk && dbHealth?.minioBucket && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Bucket</span>
+                <span className="text-sm font-mono truncate max-w-[100px]" title={dbHealth.minioBucket}>{dbHealth.minioBucket}</span>
+              </div>
+            )}
+
+            {dbHealth?.minioError && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400 truncate" title={dbHealth.minioError}>
+                {dbHealth.minioError}
+              </div>
+            )}
+
+            {dbUpdatedAt > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                <Clock className="h-3.5 w-3.5" />
+                {t('health.lastChecked')} :{' '}
+                {format(new Date(dbUpdatedAt), 'HH:mm:ss')}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Global Status Banner */}
@@ -321,7 +387,7 @@ export function HealthPage() {
             <Server className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium">
-                {apiOk && dbOk && redisOk && mkdocsOk
+                {apiOk && dbOk && redisOk && mkdocsOk && minioOk
                   ? 'Tous les systèmes sont opérationnels'
                   : !apiOk && !dbOk
                   ? 'API et bases de données inaccessibles'
@@ -333,7 +399,7 @@ export function HealthPage() {
             </div>
             <div
               className={`h-3 w-3 rounded-full ${
-                apiOk && dbOk && redisOk && mkdocsOk
+                apiOk && dbOk && redisOk && mkdocsOk && minioOk
                   ? 'bg-green-500'
                   : apiOk || dbOk
                   ? 'bg-yellow-500'

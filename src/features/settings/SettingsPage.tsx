@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/components/shared/ThemeProvider';
 import { useToast } from '@/hooks/use-toast';
-import { authApi, systemConfigApi, aiApi, type NlqProvider } from '@/api';
+import { authApi, systemConfigApi, aiApi, storageApi, type NlqProvider } from '@/api';
 import { useAdminUsers } from '@/hooks/use-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard, Bot, CheckCircle2, RefreshCw } from 'lucide-react';
+import { User, Lock, Palette, Sun, Moon, Loader2, Bell, Keyboard, Bot, CheckCircle2, RefreshCw, HardDrive } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/utils';
@@ -48,7 +48,7 @@ const passwordSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
-type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'ai';
+type SectionKey = 'profile' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'ai' | 'storage';
 
 // ─── Notification prefs ───────────────────────────────────────────────────────
 
@@ -87,9 +87,10 @@ const NAV_GROUPS = [
   {
     groupKey: 'settings.groupGeneral',
     items: [
-      { key: 'notifications' as SectionKey, icon: Bell,     labelKey: 'settings.sectionNotifications' },
-      { key: 'ai'            as SectionKey, icon: Bot,      labelKey: 'settings.sectionAi' },
-      { key: 'shortcuts'     as SectionKey, icon: Keyboard, labelKey: 'settings.sectionShortcuts' },
+      { key: 'notifications' as SectionKey, icon: Bell,      labelKey: 'settings.sectionNotifications' },
+      { key: 'ai'            as SectionKey, icon: Bot,       labelKey: 'settings.sectionAi' },
+      { key: 'storage'       as SectionKey, icon: HardDrive, labelKey: 'settings.sectionStorage' },
+      { key: 'shortcuts'     as SectionKey, icon: Keyboard,  labelKey: 'settings.sectionShortcuts' },
     ],
   },
 ];
@@ -198,6 +199,28 @@ export function SettingsPage() {
       setIsBrowsing(false);
     }
   }, [t, toast]);
+
+  // ── Storage migration ──────────────────────────────────────────────────────
+
+  const { data: migrationStatus, isLoading: migrationLoading } = useQuery({
+    queryKey: ['storage-migration-status'],
+    queryFn: async () => {
+      const res = await storageApi.getMigrationStatus();
+      return res.data;
+    },
+    enabled: activeSection === 'storage',
+  });
+
+  const { mutate: runMigration, isPending: migrating } = useMutation({
+    mutationFn: () => storageApi.migrateToMinio(),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['storage-migration-status'] });
+      toast({ title: 'Migration terminée', description: `${res.data.total} fichier(s) migré(s) vers MinIO.` });
+    },
+    onError: () => {
+      toast({ title: t('common.error'), description: 'La migration a échoué.', variant: 'destructive' });
+    },
+  });
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -841,6 +864,86 @@ export function SettingsPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Stockage ── */}
+          {activeSection === 'storage' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HardDrive className="h-5 w-5" />
+                  Stockage MinIO
+                </CardTitle>
+                <CardDescription>
+                  Migrer les fichiers uploadés localement vers le serveur MinIO self-hosted.
+                </CardDescription>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6 space-y-6">
+
+                {/* Statut */}
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">État de la migration</p>
+                  {migrationLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Vérification en cours...
+                    </div>
+                  ) : migrationStatus ? (
+                    <div className="rounded-lg border p-4 space-y-2.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Fichiers locaux restants</span>
+                        <span className={`font-semibold ${migrationStatus.total === 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                          {migrationStatus.total}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pièces jointes (bugs)</span>
+                        <span className="font-mono text-xs">{migrationStatus.bugsWithLocalUrls} bug(s)</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Releases agent</span>
+                        <span className="font-mono text-xs">{migrationStatus.releasesWithLocalUrls} release(s)</span>
+                      </div>
+                      <Separator className="my-1" />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Préfixe local</span>
+                        <span className="font-mono truncate max-w-[200px]" title={migrationStatus.localPrefix}>{migrationStatus.localPrefix}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Destination MinIO</span>
+                        <span className="font-mono truncate max-w-[200px]" title={migrationStatus.minioPublicUrl}>{migrationStatus.minioPublicUrl || '—'}</span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Action */}
+                <div className="flex items-center justify-between pt-2">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">Migrer vers MinIO</p>
+                    <p className="text-xs text-muted-foreground">
+                      Remplace les URLs locales par les URLs MinIO dans la base de données.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={migrationStatus?.total === 0 ? 'outline' : 'default'}
+                    disabled={migrating || migrationLoading || migrationStatus?.total === 0}
+                    onClick={() => runMigration()}
+                  >
+                    {migrating ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Migration...</>
+                    ) : migrationStatus?.total === 0 ? (
+                      <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />Déjà migré</>
+                    ) : (
+                      'Migrer maintenant'
+                    )}
+                  </Button>
                 </div>
 
               </CardContent>

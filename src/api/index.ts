@@ -358,6 +358,15 @@ export const dashboardsApi = {
     api.delete(`/admin/dashboards/${id}`),
 };
 
+// Storage Migration
+export const storageApi = {
+  getMigrationStatus: () =>
+    api.get<{ bugsWithLocalUrls: number; releasesWithLocalUrls: number; total: number; localPrefix: string; minioPublicUrl: string }>('/admin/storage/migration-status'),
+
+  migrateToMinio: () =>
+    api.post<{ migratedBugs: number; migratedReleases: number; total: number }>('/admin/storage/migrate-local-to-minio'),
+};
+
 // Agent Releases
 export const agentReleasesApi = {
   getAll: () =>

@@ -468,6 +468,7 @@ export const en = {
     notifNoAdmins: 'No administrators available',
     sectionAi: 'Artificial Intelligence',
     sectionAiDesc: 'Choose the AI engine for NLQ classification',
+    sectionStorage: 'Storage',
     aiProviderLabel: 'NLQ Classification Engine',
     aiProviderClaude: 'Claude (Anthropic)',
     aiProviderClaudeDesc: 'Uses the Anthropic Claude API to classify questions',
