@@ -58,6 +58,7 @@ export function KeyboardShortcutsHelp({ open, onOpenChange }: KeyboardShortcutsH
           <Section title="Général">
             <ShortcutRow keys={['Ctrl', 'K']}        description="Recherche globale" />
             <ShortcutRow keys={['Ctrl', '\\']}        description="Réduire / étendre le sidebar" />
+            <ShortcutRow keys={['Ctrl', 'B']}          description="Réduire / étendre le sidebar" />
             <ShortcutRow keys={['Ctrl', 'Shift', 'L']} description="Basculer thème clair / sombre" />
             <ShortcutRow keys={['?']}                description="Afficher cette aide" />
           </Section>

@@ -34,21 +34,25 @@ class SocketClient:
         self.sio.on('connect_error', self.on_connect_error, namespace='/agents')
 
     async def connect(self):
-        """Connect to the backend WebSocket"""
+        """Connect to the backend WebSocket, retrying until success."""
         backend_url = self.config.backend.url.rstrip('/')
         token = self.config.backend.agent_token
-        
-        logger.info(f"Connecting to WebSocket: {backend_url}/agents")
-        
-        try:
-            await self.sio.connect(
-                f"{backend_url}",
-                namespaces=['/agents'],
-                auth={'token': token},
-                transports=['websocket'] # Force WebSocket for efficiency
-            )
-        except Exception as e:
-            logger.error(f"WebSocket connection failed: {e}")
+        delay = 5
+
+        while True:
+            logger.info(f"Connecting to WebSocket: {backend_url}/agents")
+            try:
+                await self.sio.connect(
+                    f"{backend_url}",
+                    namespaces=['/agents'],
+                    auth={'token': token},
+                    transports=['websocket'],
+                )
+                return  # reconnection=True handles subsequent drops
+            except Exception as e:
+                logger.warning(f"WebSocket connection failed: {e}. Retry in {delay}s...")
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 30)
 
     async def on_connect(self):
         logger.info("✅ Connected to InsightSage WebSocket")

@@ -802,6 +802,7 @@ export function SettingsPage() {
                     {[
                       { keys: ['Ctrl', 'K'],         description: 'Recherche globale' },
                       { keys: ['Ctrl', '\\'],        description: 'Réduire / étendre le sidebar' },
+                      { keys: ['Ctrl', 'B'],         description: 'Réduire / étendre le sidebar' },
                       { keys: ['Ctrl', 'Shift', 'L'], description: 'Basculer thème clair / sombre' },
                       { keys: ['?'],                 description: 'Afficher les raccourcis clavier' },
                     ].map(({ keys, description }) => (

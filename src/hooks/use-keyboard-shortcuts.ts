@@ -47,7 +47,7 @@ export function useKeyboardShortcuts({ onSearch, onToggleSidebar, onHelp }: Opti
           onSearch();
           return;
         }
-        if (e.key === '\\') {
+        if (e.key === '\\' || e.key === 'b') {
           e.preventDefault();
           onToggleSidebar();
           return;
