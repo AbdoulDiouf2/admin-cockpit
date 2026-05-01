@@ -60,6 +60,7 @@ const DEFAULT_NOTIF = {
   paymentSuccess: false,
   errorLogs: true,
   bugReports: true,
+  systemHealth: true,
 };
 
 type NotifPrefs = typeof DEFAULT_NOTIF;
@@ -486,6 +487,7 @@ export function SettingsPage() {
                     { key: 'paymentSuccess', labelKey: 'settings.notifPaymentSuccess', descKey: 'settings.notifPaymentSuccessDesc' },
                     { key: 'errorLogs',      labelKey: 'settings.notifErrorLogs',      descKey: 'settings.notifErrorLogsDesc' },
                     { key: 'bugReports',    labelKey: 'settings.notifBugReports',    descKey: 'settings.notifBugReportsDesc' },
+                    { key: 'systemHealth',  labelKey: 'settings.notifSystemHealth',  descKey: 'settings.notifSystemHealthDesc' },
                   ] as { key: keyof NotifPrefs; labelKey: string; descKey: string }[]).map(({ key, labelKey, descKey }) => (
                     <div key={key} className="flex items-center justify-between py-4">
                       <div className="space-y-0.5">

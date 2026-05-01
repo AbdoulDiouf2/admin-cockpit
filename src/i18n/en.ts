@@ -463,6 +463,8 @@ export const en = {
     notifErrorLogsDesc: 'Receive an email when an error log is recorded',
     notifBugReports: 'Bug reports',
     notifBugReportsDesc: 'Notify admins and confirm receipt to the submitter on each new bug report',
+    notifSystemHealth: 'System health',
+    notifSystemHealthDesc: 'Receive an email when a component (database, Redis, MinIO) goes down or recovers',
     notifRecipients: 'Alert recipients',
     notifRecipientsDesc: 'Select the administrators who will receive these emails',
     notifNoAdmins: 'No administrators available',

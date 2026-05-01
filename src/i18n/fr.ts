@@ -504,6 +504,8 @@ export const fr = {
     notifErrorLogsDesc: 'Recevoir un email quand un log de type erreur est enregistré',
     notifBugReports: 'Signalements de bugs',
     notifBugReportsDesc: 'Notifier les admins et confirmer la réception au soumetteur à chaque nouveau signalement',
+    notifSystemHealth: 'Santé système',
+    notifSystemHealthDesc: 'Recevoir un email quand un composant (base de données, Redis, MinIO) tombe ou se rétablit',
     notifRecipients: 'Destinataires des alertes',
     notifRecipientsDesc: 'Sélectionnez les administrateurs qui recevront ces emails',
     notifNoAdmins: 'Aucun administrateur disponible',
