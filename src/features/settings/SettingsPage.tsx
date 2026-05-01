@@ -222,6 +222,20 @@ export function SettingsPage() {
     },
   });
 
+  const [urlOldPrefix, setUrlOldPrefix] = useState('');
+  const [urlNewPrefix, setUrlNewPrefix] = useState('');
+  const { mutate: runUrlUpdate, isPending: urlUpdating } = useMutation({
+    mutationFn: () => storageApi.updatePublicUrl(urlOldPrefix.trim(), urlNewPrefix.trim()),
+    onSuccess: (res) => {
+      toast({ title: 'Mise à jour terminée', description: `${res.data.total} enregistrement(s) mis à jour.` });
+      setUrlOldPrefix('');
+      setUrlNewPrefix('');
+    },
+    onError: () => {
+      toast({ title: t('common.error'), description: 'La mise à jour a échoué.', variant: 'destructive' });
+    },
+  });
+
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -945,6 +959,46 @@ export function SettingsPage() {
                       'Migrer maintenant'
                     )}
                   </Button>
+                </div>
+
+                <Separator />
+
+                {/* Mise à jour URL publique */}
+                <div className="space-y-3">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">Mettre à jour l'URL publique</p>
+                    <p className="text-xs text-muted-foreground">
+                      Remplace un préfixe d'URL dans tous les enregistrements (releases, pièces jointes). Utile après un changement de domaine ou de configuration MinIO.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Ancien préfixe — ex: http://localhost:9000/cockpit-storage"
+                      value={urlOldPrefix}
+                      onChange={e => setUrlOldPrefix(e.target.value)}
+                    />
+                    <input
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Nouveau préfixe — ex: https://cockpit.nafakatech.com/storage/cockpit-storage"
+                      value={urlNewPrefix}
+                      onChange={e => setUrlNewPrefix(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={urlUpdating || !urlOldPrefix.trim() || !urlNewPrefix.trim()}
+                      onClick={() => runUrlUpdate()}
+                    >
+                      {urlUpdating ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mise à jour...</>
+                      ) : (
+                        'Mettre à jour'
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
               </CardContent>

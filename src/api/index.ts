@@ -365,6 +365,9 @@ export const storageApi = {
 
   migrateToMinio: () =>
     api.post<{ migratedBugs: number; migratedReleases: number; total: number }>('/admin/storage/migrate-local-to-minio'),
+
+  updatePublicUrl: (oldPrefix: string, newPrefix: string) =>
+    api.post<{ migratedBugs: number; migratedReleases: number; total: number }>('/admin/storage/update-public-url', { oldPrefix, newPrefix }),
 };
 
 // Agent Releases
