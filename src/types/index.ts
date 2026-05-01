@@ -434,3 +434,13 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+
+export interface JobStatus {
+  name: string;
+  lastRunAt: string | null;
+  lastRunDurationMs: number | null;
+  lastRunSuccess: boolean | null;
+  lastError: string | null;
+  runCount: number;
+}

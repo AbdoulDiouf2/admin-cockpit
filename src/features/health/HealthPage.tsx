@@ -12,9 +12,11 @@ import {
   Server,
   BookOpen,
   HardDrive,
+  Timer,
 } from 'lucide-react';
 import { healthApi } from '@/api';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export function HealthPage() {
   const { t } = useTranslation();
@@ -49,9 +51,23 @@ export function HealthPage() {
     retry: false,
   });
 
+  const {
+    data: jobsData,
+    isLoading: jobsLoading,
+    refetch: refetchJobs,
+    isFetching: jobsFetching,
+  } = useQuery({
+    queryKey: ['health-jobs'],
+    queryFn: () => healthApi.getJobs().then((r) => r.data),
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: false,
+    retry: false,
+  });
+
   const handleRefresh = () => {
     refetchApi();
     refetchDb();
+    refetchJobs();
   };
 
   const apiOk = !apiError && apiHealth?.status === 'ok';
@@ -59,7 +75,7 @@ export function HealthPage() {
   const redisOk = dbHealth?.redis === 'connected';
   const mkdocsOk = dbHealth?.mkdocs === 'connected';
   const minioOk = dbHealth?.minio === 'connected';
-  const isFetching = apiFetching || dbFetching;
+  const isFetching = apiFetching || dbFetching || jobsFetching;
 
   return (
     <div className="space-y-6" data-testid="health-page">
@@ -407,6 +423,88 @@ export function HealthPage() {
               } ${isFetching ? 'animate-pulse' : ''}`}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Background Jobs */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div className="flex items-center gap-2">
+            <Timer className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-base">{t('health.jobs')}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('health.jobsSubtitle')}</p>
+            </div>
+          </div>
+          {jobsLoading && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </CardHeader>
+        <CardContent>
+          {jobsLoading ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              Chargement...
+            </div>
+          ) : !jobsData || jobsData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Aucun job enregistré — les tâches s'affichent après leur premier démarrage.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="pb-2 text-left font-medium">{t('health.jobName')}</th>
+                    <th className="pb-2 text-left font-medium">{t('health.jobLastRun')}</th>
+                    <th className="pb-2 text-right font-medium">{t('health.jobDuration')}</th>
+                    <th className="pb-2 text-right font-medium">{t('health.jobRuns')}</th>
+                    <th className="pb-2 text-right font-medium">{t('health.jobStatus')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {jobsData.map((job) => (
+                    <tr key={job.name} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-2.5 pr-4 font-medium">{job.name}</td>
+                      <td className="py-2.5 pr-4 text-muted-foreground">
+                        {job.lastRunAt ? (
+                          <span title={format(new Date(job.lastRunAt), 'dd/MM/yyyy HH:mm:ss')}>
+                            {formatDistanceToNow(new Date(job.lastRunAt), { addSuffix: true, locale: fr })}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/60 italic">{t('health.jobNever')}</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                        {job.lastRunDurationMs != null ? `${job.lastRunDurationMs} ms` : '—'}
+                      </td>
+                      <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                        {job.runCount}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        {job.lastRunSuccess === null ? (
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                            {t('health.jobPending')}
+                          </span>
+                        ) : job.lastRunSuccess ? (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {t('health.jobSuccess')}
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 cursor-help"
+                            title={job.lastError ?? undefined}
+                          >
+                            <XCircle className="h-3 w-3" />
+                            {t('health.jobFailed')}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

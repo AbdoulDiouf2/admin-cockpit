@@ -22,6 +22,7 @@ import type {
   KpiHealthStat,
   KpiHealthDetail,
   AgentRelease,
+  JobStatus,
 } from '@/types';
 
 // Auth
@@ -269,6 +270,9 @@ export const healthApi = {
 
   checkDb: () =>
     api.get('/health/db'),
+
+  getJobs: () =>
+    api.get<JobStatus[]>('/health/jobs'),
 };
 
 // NLQ Store
