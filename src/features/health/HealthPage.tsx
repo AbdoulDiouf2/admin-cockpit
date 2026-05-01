@@ -55,7 +55,7 @@ export function HealthPage() {
   };
 
   const apiOk = !apiError && apiHealth?.status === 'ok';
-  const dbOk = !dbError && dbHealth?.status === 'ok';
+  const dbOk = !dbError && dbHealth?.database === 'connected';
   const redisOk = dbHealth?.redis === 'connected';
   const mkdocsOk = dbHealth?.mkdocs === 'connected';
   const minioOk = dbHealth?.minio === 'connected';
