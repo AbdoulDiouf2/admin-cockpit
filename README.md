@@ -1,6 +1,6 @@
-# InsightSage Admin Cockpit
+﻿# Cockpit — Admin Cockpit
 
-Interface d'administration pour la plateforme InsightSage.
+Interface d'administration pour la plateforme Cockpit (Nafaka Tech).
 
 ## Démarrage rapide
 
@@ -87,8 +87,9 @@ admin-cockpit/
 │   │   ├── roles/         # Gestion des rôles RBAC + page de détail
 │   │   ├── agents/        # Monitoring des agents Sage on-premise + détail
 │   │   ├── audit-logs/    # Logs d'audit avec filtres
-│   │   ├── health/        # Health check backend
-│   │   ├── profile/       # Profil utilisateur courant
+│   │   ├── health/        # Santé système (composants + jobs planifiés)
+│   │   
+│   │   ├── settings/      # Paramètres : notifications, stockage (migration URL MinIO)
 │   │   ├── subscriptions/ # Plans d'abonnement + page de détail
 │   │   └── kpi-store/     # KPI Store — KPI Definitions, Widget Templates, KPI Packs
 │   │       ├── KpiStorePage.tsx              # Page principale (3 onglets)
@@ -156,7 +157,8 @@ admin-cockpit/
 | `/agents` | Monitoring des agents Sage on-premise |
 | `/agents/:id` | Détail d'un agent |
 | `/audit-logs` | Historique des actions (filtres par utilisateur, événement, date) |
-| `/health` | Health check du backend |
+| `/health` | Santé système : API, DB, Redis, MinIO, MkDocs + tableau des jobs planifiés |
+| `/settings` | Paramètres : profil, sécurité, notifications, stockage (migration URL MinIO) |
 | `/profile` | Profil de l'utilisateur courant |
 | `/bug-tracker` | Bug Tracker interne (Admin) |
 | `/bug-tracker/create` | Formulaire de signalement avancé |
@@ -302,4 +304,4 @@ GET  /api/v1/bugs                         # Liste des bugs (admin)
 
 ## License
 
-Propriétaire — InsightSage © 2025
+Propriétaire — Cockpit by Nafaka Tech © 2026 — UNLICENSED
