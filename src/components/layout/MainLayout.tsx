@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toaster } from '@/components/ui/toaster';
@@ -16,6 +16,27 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [helpOpen, setHelpOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => setSidebarCollapsed((c) => !c), []);
+
+  const wasCollapsedBeforeSmall = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        if (wasCollapsedBeforeSmall.current === null) {
+          wasCollapsedBeforeSmall.current = sidebarCollapsed;
+        }
+        setSidebarCollapsed(true);
+      } else {
+        if (wasCollapsedBeforeSmall.current !== null) {
+          setSidebarCollapsed(wasCollapsedBeforeSmall.current);
+          wasCollapsedBeforeSmall.current = null;
+        }
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useKeyboardShortcuts({
     onSearch: () => setSearchOpen(true),
