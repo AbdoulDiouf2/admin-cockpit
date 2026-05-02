@@ -84,7 +84,7 @@ export function LoginPage() {
             variant: 'destructive',
           });
         }
-        setError(errorMessage || t('auth.invalidCredentials'));
+        setError(status === 401 ? t('auth.invalidCredentials') : (errorMessage || t('auth.invalidCredentials')));
       }
     } finally {
       setIsLoading(false);

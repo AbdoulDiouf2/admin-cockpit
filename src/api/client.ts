@@ -28,8 +28,8 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config;
     
-    // Handle 401 - try refresh token
-    if (error.response?.status === 401 && originalRequest) {
+    // Handle 401 - try refresh token (skip for login/refresh endpoints)
+    if (error.response?.status === 401 && originalRequest && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/refresh')) {
       const refreshToken = localStorage.getItem('refreshToken');
       
       if (refreshToken) {
