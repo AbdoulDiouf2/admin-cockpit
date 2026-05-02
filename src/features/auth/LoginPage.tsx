@@ -72,9 +72,9 @@ export function LoginPage() {
 
       if ((err as Error)?.message === 'FORBIDDEN_NOT_SUPERADMIN') {
         setError('Accès refusé. Ce portail est réservé aux administrateurs Cockpit.');
-      } else if (status === 429 && errorMessage?.includes('verrouillé')) {
+      } else if (status === 429) {
         const lockoutRemainingSeconds = (err as { response?: { data?: { lockoutRemainingSeconds?: number } } })?.response?.data?.lockoutRemainingSeconds;
-        startLockoutCountdown(lockoutRemainingSeconds ?? LOGIN_LOCKOUT_TTL);
+        startLockoutCountdown(lockoutRemainingSeconds ?? 60);
       } else {
         const remainingAttempts = (err as { response?: { data?: { remainingAttempts?: number } } })?.response?.data?.remainingAttempts;
         if (remainingAttempts !== undefined && remainingAttempts > 0) {
