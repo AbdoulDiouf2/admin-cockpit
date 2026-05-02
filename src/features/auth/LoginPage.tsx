@@ -1,23 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Loader2, Eye, EyeOff, Lock } from 'lucide-react';
+
+const LOGIN_LOCKOUT_TTL = 15 * 60;
 
 export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState<number | null>(null);
+  const lockoutIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (lockoutIntervalRef.current) clearInterval(lockoutIntervalRef.current);
+    };
+  }, []);
 
   // Redirect if already authenticated
   if (authLoading) {
@@ -32,6 +43,21 @@ export function LoginPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const startLockoutCountdown = (seconds: number) => {
+    if (lockoutIntervalRef.current) clearInterval(lockoutIntervalRef.current);
+    setLockoutSeconds(seconds);
+    lockoutIntervalRef.current = setInterval(() => {
+      setLockoutSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(lockoutIntervalRef.current!);
+          lockoutIntervalRef.current = null;
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -41,15 +67,34 @@ export function LoginPage() {
       await login({ email, password });
       navigate('/dashboard');
     } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
       if ((err as Error)?.message === 'FORBIDDEN_NOT_SUPERADMIN') {
         setError('Accès refusé. Ce portail est réservé aux administrateurs Cockpit.');
+      } else if (status === 429 && errorMessage?.includes('verrouillé')) {
+        const lockoutRemainingSeconds = (err as { response?: { data?: { lockoutRemainingSeconds?: number } } })?.response?.data?.lockoutRemainingSeconds;
+        startLockoutCountdown(lockoutRemainingSeconds ?? LOGIN_LOCKOUT_TTL);
       } else {
-        const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        const remainingAttempts = (err as { response?: { data?: { remainingAttempts?: number } } })?.response?.data?.remainingAttempts;
+        if (remainingAttempts !== undefined && remainingAttempts > 0) {
+          toast({
+            title: 'Tentative échouée',
+            description: `Il vous reste ${remainingAttempts} tentative${remainingAttempts > 1 ? 's' : ''} avant le verrouillage du compte.`,
+            variant: 'destructive',
+          });
+        }
         setError(errorMessage || t('auth.invalidCredentials'));
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${m}:${s}`;
   };
 
   return (
@@ -129,7 +174,17 @@ export function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+            {lockoutSeconds !== null && (
+              <div className="flex items-center gap-3 p-4 text-sm text-orange-600 bg-orange-500/10 rounded-xl border border-orange-500/20 animate-in fade-in zoom-in duration-200">
+                <Lock className="h-5 w-5 shrink-0" />
+                <span>
+                  Compte verrouillé — réessayez dans{' '}
+                  <span className="font-bold tabular-nums">{formatCountdown(lockoutSeconds)}</span>
+                </span>
+              </div>
+            )}
+
+            {error && !lockoutSeconds && (
               <div
                 className="flex items-center gap-3 p-4 text-sm text-destructive bg-destructive/5 rounded-xl border border-destructive/10 animate-in fade-in zoom-in duration-200"
                 data-testid="login-error"
@@ -151,6 +206,7 @@ export function LoginPage() {
                   required
                   autoComplete="email"
                   data-testid="login-email-input"
+                  disabled={lockoutSeconds !== null}
                   className="h-12 bg-muted/30 border-transparent focus:border-primary/30 focus:ring-primary/20 transition-all rounded-xl"
                 />
               </div>
@@ -172,11 +228,13 @@ export function LoginPage() {
                     required
                     autoComplete="current-password"
                     data-testid="login-password-input"
+                    disabled={lockoutSeconds !== null}
                     className="h-12 bg-muted/30 border-transparent focus:border-primary/30 focus:ring-primary/20 transition-all rounded-xl pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={lockoutSeconds !== null}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                     aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   >
@@ -193,13 +251,18 @@ export function LoginPage() {
             <Button
               type="submit"
               className="w-full h-12 font-bold text-base rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
-              disabled={isLoading}
+              disabled={isLoading || lockoutSeconds !== null}
               data-testid="login-submit-btn"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   {t('common.loading')}
+                </>
+              ) : lockoutSeconds !== null ? (
+                <>
+                  <Lock className="mr-2 h-5 w-5" />
+                  Compte verrouillé
                 </>
               ) : (
                 t('auth.signIn')

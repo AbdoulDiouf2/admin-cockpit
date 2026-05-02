@@ -40,7 +40,7 @@ export const fr = {
     signIn: 'Se connecter',
     welcome: 'Bienvenue',
     subtitle: 'Connectez-vous à votre compte administrateur',
-    invalidCredentials: 'Identifiants invalides',
+    invalidCredentials: 'Email ou mot de passe incorrect.',
     sessionExpired: 'Session expirée, veuillez vous reconnecter',
   },
   nav: {

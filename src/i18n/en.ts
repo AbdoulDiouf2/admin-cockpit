@@ -40,7 +40,7 @@ export const en = {
     signIn: 'Sign in',
     welcome: 'Welcome',
     subtitle: 'Sign in to your admin account',
-    invalidCredentials: 'Invalid credentials',
+    invalidCredentials: 'Incorrect email or password.',
     sessionExpired: 'Session expired, please sign in again',
   },
   nav: {
