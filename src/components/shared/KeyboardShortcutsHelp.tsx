@@ -74,8 +74,11 @@ export function KeyboardShortcutsHelp({ open, onOpenChange }: KeyboardShortcutsH
             <ShortcutRow keys={['G', 'F']} description="Facturation" />
             <ShortcutRow keys={['G', 'T']} description="Dashboards Clients" />
             <ShortcutRow keys={['G', 'K']} description="KPI Store" />
+            <ShortcutRow keys={['G', 'W']} description="KPI Santé" />
             <ShortcutRow keys={['G', 'N']} description="NLQ Store" />
             <ShortcutRow keys={['G', 'A']} description="Agents" />
+            <ShortcutRow keys={['G', 'E']} description="Releases Agent" />
+            <ShortcutRow keys={['G', 'B']} description="Bug Tracker" />
             <ShortcutRow keys={['G', 'L']} description="Logs d'audit" />
             <ShortcutRow keys={['G', 'H']} description="Santé Système" />
             <ShortcutRow keys={['G', 'S']} description="Paramètres" />

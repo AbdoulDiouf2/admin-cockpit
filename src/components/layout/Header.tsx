@@ -119,66 +119,24 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="flex items-center justify-between h-full px-4 lg:px-6 relative">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center h-full px-4 lg:px-6 gap-2">
 
-        {/* Upload progress — centré dans le header */}
-        {showUploadBadge && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 bg-background border border-border rounded-full px-3 py-1.5 shadow-sm text-xs max-w-[320px]">
-            {isUploading ? (
-              <>
-                <Upload className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
-                <div className="flex flex-col gap-1 min-w-0">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate text-muted-foreground max-w-[160px]">{fileName}</span>
-                    <span className="font-semibold tabular-nums text-primary shrink-0">{progress}%</span>
-                  </div>
-                  <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              </>
-            ) : error ? (
-              <>
-                <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
-                <span className="text-destructive truncate max-w-[200px]">Upload échoué</span>
-                <button onClick={dismiss} className="ml-1 text-muted-foreground hover:text-foreground shrink-0">
-                  <X className="h-3 w-3" />
-                </button>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                <Link to="/agent-releases" className="text-emerald-600 hover:underline truncate max-w-[180px]">
-                  {fileName} publié
-                </Link>
-                <button onClick={dismiss} className="ml-1 text-muted-foreground hover:text-foreground shrink-0">
-                  <X className="h-3 w-3" />
-                </button>
-              </>
-            )}
-          </div>
-        )}
-        {/* Left side */}
-        <div className="flex items-center gap-3">
-          {/* Mobile menu */}
+        {/* ── Col 1 : gauche — menu + breadcrumb ── */}
+        <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden shrink-0"
             onClick={onMenuToggle}
             data-testid="mobile-menu-btn"
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Breadcrumb */}
-          <nav className="hidden lg:flex items-center gap-1 text-sm">
+          <nav className="hidden lg:flex items-center gap-1 text-sm min-w-0">
             <NavLink
               to="/dashboard"
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded shrink-0"
             >
               <House className="h-4 w-4" />
             </NavLink>
@@ -186,44 +144,86 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
             {title && (
               <>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-
                 {parentPath ? (
                   <>
                     <NavLink
                       to={parentPath}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-muted-foreground hover:text-foreground transition-colors truncate"
                     >
                       {title}
                     </NavLink>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                    <span className="font-semibold text-foreground">{subTitle || 'Détail'}</span>
+                    <span className="font-semibold text-foreground truncate">{subTitle || 'Détail'}</span>
                   </>
                 ) : (
-                  <span className="font-semibold text-foreground">{title}</span>
+                  <span className="font-semibold text-foreground truncate">{title}</span>
                 )}
               </>
             )}
           </nav>
         </div>
 
-        {/* Search button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onSearchOpen}
-          className="hidden lg:flex items-center gap-2 text-muted-foreground w-52 justify-between ml-auto"
-        >
-          <div className="flex items-center gap-2">
-            <Search className="h-3.5 w-3.5" />
-            <span className="text-xs">Rechercher...</span>
-          </div>
-          <kbd className="text-[10px] bg-muted border border-border px-1.5 py-0.5 rounded font-mono leading-none">
-            Ctrl+K
-          </kbd>
-        </Button>
+        {/* ── Col 2 : centre — badge upload uniquement ── */}
+        <div className="flex justify-center">
+          {showUploadBadge && (
+            <div className="flex items-center gap-2.5 bg-background border border-border rounded-full px-3 py-1.5 shadow-sm text-xs w-[280px] lg:w-[320px]">
+              {isUploading ? (
+                <>
+                  <Upload className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-muted-foreground">{fileName}</span>
+                      <span className="font-semibold tabular-nums text-primary shrink-0">{progress}%</span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : error ? (
+                <>
+                  <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  <span className="text-destructive truncate flex-1">Upload échoué</span>
+                  <button onClick={dismiss} className="text-muted-foreground hover:text-foreground shrink-0">
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <Link to="/agent-releases" className="text-emerald-600 hover:underline truncate flex-1">
+                    {fileName} publié
+                  </Link>
+                  <button onClick={dismiss} className="text-muted-foreground hover:text-foreground shrink-0">
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
-        {/* Right side - Actions */}
-        <div className="flex items-center gap-2 lg:ml-2">
+        {/* ── Col 3 : droite — search + actions ── */}
+        <div className="flex items-center gap-2 justify-end">
+          {/* Search */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSearchOpen}
+            className="hidden lg:flex items-center gap-2 text-muted-foreground w-52 justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5" />
+              <span className="text-xs">Rechercher...</span>
+            </div>
+            <kbd className="text-[10px] bg-muted border border-border px-1.5 py-0.5 rounded font-mono leading-none">
+              Ctrl+K
+            </kbd>
+          </Button>
+
           {/* Notification bell */}
           <NotificationBell />
 
