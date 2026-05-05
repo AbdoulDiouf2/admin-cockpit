@@ -1,4 +1,6 @@
 // User types
+export type SetupStatus = 'active' | 'pending' | 'expired';
+
 export interface User {
   id: string;
   email: string;
@@ -9,6 +11,8 @@ export interface User {
   organizationId: string | null;
   organization?: Organization;
   userRoles?: UserRole[];
+  setupStatus?: SetupStatus;
+  setupTokenExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

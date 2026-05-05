@@ -4,7 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, MoreHorizontal } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Users, UserPlus, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import type { SetupStatus } from '@/types';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { usersApi } from '@/api';
@@ -36,6 +40,7 @@ export function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [orgFilter, setOrgFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -69,6 +74,24 @@ export function UsersPage() {
       toast({
         title: t('common.error'),
         description: error.response?.data?.message || t('users.deleteError'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: (userId: string) => usersApi.resendSetup(userId),
+    onMutate: (userId) => setResendingId(userId),
+    onSuccess: (_, userId) => {
+      setResendingId(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({ title: 'Email renvoyé', description: 'Lien de setup envoyé (valide 24h).' });
+    },
+    onError: (error: any) => {
+      setResendingId(null);
+      toast({
+        title: t('common.error'),
+        description: error.response?.data?.message || 'Impossible de renvoyer le lien.',
         variant: 'destructive',
       });
     },
@@ -128,6 +151,42 @@ export function UsersPage() {
       ),
     },
     {
+      id: 'setupStatus',
+      header: 'Compte',
+      cell: ({ row }) => {
+        const status: SetupStatus = row.original.setupStatus ?? 'active';
+        const expiresAt = row.original.setupTokenExpiresAt;
+
+        if (status === 'active') {
+          return <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 border-emerald-200">Activé</Badge>;
+        }
+
+        const label = status === 'pending' ? 'En attente' : 'Lien expiré';
+        const badgeClass = status === 'pending'
+          ? 'bg-amber-500/15 text-amber-700 border-amber-200'
+          : 'bg-destructive/15 text-destructive border-destructive/20';
+
+        const badge = (
+          <Badge variant="outline" className={badgeClass}>{label}</Badge>
+        );
+
+        if (status === 'pending' && expiresAt) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>{badge}</TooltipTrigger>
+                <TooltipContent>
+                  Expire {formatDistanceToNow(new Date(expiresAt), { addSuffix: true, locale: fr })}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+
+        return badge;
+      },
+    },
+    {
       accessorKey: 'createdAt',
       header: t('common.date'),
       cell: ({ row }) =>
@@ -151,6 +210,18 @@ export function UsersPage() {
                 <DropdownMenuItem onClick={() => setEditUser(user)}>
                   {t('common.edit')}
                 </DropdownMenuItem>
+                {(user.setupStatus === 'pending' || user.setupStatus === 'expired') && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => resendMutation.mutate(user.id)}
+                      disabled={resendingId === user.id}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${resendingId === user.id ? 'animate-spin' : ''}`} />
+                      Renvoyer le lien de setup
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"

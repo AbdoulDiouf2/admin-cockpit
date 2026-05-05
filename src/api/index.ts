@@ -104,6 +104,9 @@ export const usersApi = {
   delete: (id: string) =>
     api.delete(`/admin/users/${id}`),
 
+  resendSetup: (id: string) =>
+    api.post<{ message: string; expiresAt: string }>(`/admin/users/${id}/resend-setup`),
+
   invite: (data: { email: string; role: string; organizationId: string }) =>
     api.post('/auth/invite', data),
 };
