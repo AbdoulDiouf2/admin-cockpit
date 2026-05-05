@@ -1,6 +1,6 @@
 ﻿# Cockpit — Admin Cockpit
 
-Interface d'administration pour la plateforme Cockpit (Nafaka Tech).
+Interface d'administration pour la plateforme Cockpit (Nafaka Tech). 
 
 ## Démarrage rapide
 
