@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileDown } from 'lucide-react';
+import { Upload, X, FileDown, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,9 +53,12 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
   const [arch, setArch] = useState('x64');
   const [changelog, setChangelog] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const onProgress = useCallback((pct: number) => setUploadProgress(pct), []);
 
   const uploadMutation = useMutation({
-    mutationFn: (formData: FormData) => agentReleasesApi.upload(formData),
+    mutationFn: (formData: FormData) => agentReleasesApi.upload(formData, onProgress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-releases'] });
       toast({ title: 'Release uploadée', description: 'L\'exécutable a été publié avec succès.' });
@@ -65,6 +68,7 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
       setPlatform('windows');
       setArch('x64');
       setChangelog('');
+      setUploadProgress(0);
       onOpenChange(false);
     },
     onError: (error: any) => {
@@ -83,6 +87,7 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
     setPlatform('windows');
     setArch('x64');
     setChangelog('');
+    setUploadProgress(0);
     onOpenChange(false);
   }
 
@@ -99,6 +104,7 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
 
   function handleSubmit() {
     if (!file || !version || !platform) return;
+    setUploadProgress(0);
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('version', version.trim());
@@ -216,6 +222,27 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
             />
           </div>
         </div>
+
+        {uploadMutation.isPending && (
+          <div className="space-y-1.5 px-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {uploadProgress < 100 ? 'Transfert vers le serveur…' : (
+                  <span className="flex items-center gap-1 text-emerald-600">
+                    <CheckCircle2 className="w-3 h-3" /> Traitement en cours…
+                  </span>
+                )}
+              </span>
+              <span className="font-medium tabular-nums">{uploadProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={uploadMutation.isPending}>
