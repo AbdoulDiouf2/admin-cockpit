@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -26,6 +27,9 @@ import {
 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { NotificationBell } from './NotificationBell';
+import { useUploadRelease } from '@/features/agents/UploadReleaseContext';
+import { Link } from 'react-router-dom';
+import { Upload, CheckCircle2, XCircle, X } from 'lucide-react';
 
 // Ordered from most specific to least specific
 const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string; subKey?: string }[] = [
@@ -89,6 +93,7 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { title, parentPath, subTitle } = usePageTitle();
+  const { isUploading, progress, fileName, error, dismiss } = useUploadRelease();
 
   const currentLang = i18n.language;
 
@@ -102,9 +107,60 @@ export function Header({ onMenuToggle, onSearchOpen }: HeaderProps) {
     await logout();
   };
 
+  const showUploadBadge = isUploading || !!error || progress === 100;
+
+  // Auto-dismiss le badge succès après 4s
+  useEffect(() => {
+    if (progress === 100 && !isUploading && !error) {
+      const t = setTimeout(dismiss, 4000);
+      return () => clearTimeout(t);
+    }
+  }, [progress, isUploading, error, dismiss]);
+
   return (
     <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="flex items-center justify-between h-full px-4 lg:px-6">
+      <div className="flex items-center justify-between h-full px-4 lg:px-6 relative">
+
+        {/* Upload progress — centré dans le header */}
+        {showUploadBadge && (
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 bg-background border border-border rounded-full px-3 py-1.5 shadow-sm text-xs max-w-[320px]">
+            {isUploading ? (
+              <>
+                <Upload className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-muted-foreground max-w-[160px]">{fileName}</span>
+                    <span className="font-semibold tabular-nums text-primary shrink-0">{progress}%</span>
+                  </div>
+                  <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : error ? (
+              <>
+                <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                <span className="text-destructive truncate max-w-[200px]">Upload échoué</span>
+                <button onClick={dismiss} className="ml-1 text-muted-foreground hover:text-foreground shrink-0">
+                  <X className="h-3 w-3" />
+                </button>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <Link to="/agent-releases" className="text-emerald-600 hover:underline truncate max-w-[180px]">
+                  {fileName} publié
+                </Link>
+                <button onClick={dismiss} className="ml-1 text-muted-foreground hover:text-foreground shrink-0">
+                  <X className="h-3 w-3" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {/* Left side */}
         <div className="flex items-center gap-3">
           {/* Mobile menu */}

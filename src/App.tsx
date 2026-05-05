@@ -43,6 +43,7 @@ import { BugTrackerPage } from './features/bug-tracker/BugTrackerPage';
 import { CreateBugPage } from './features/bug-tracker/CreateBugPage';
 import { BugDetailPage } from './features/bug-tracker/BugDetailPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
+import { UploadReleaseProvider } from './features/agents/UploadReleaseContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -68,6 +69,7 @@ export default function App() {
         path="/*"
         element={
           <ProtectedRoute>
+            <UploadReleaseProvider>
             <MainLayout>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -111,6 +113,7 @@ export default function App() {
                 <Route path="/bug-tracker/:id" element={<BugDetailPage />} />
               </Routes>
             </MainLayout>
+            </UploadReleaseProvider>
           </ProtectedRoute>
         }
       />

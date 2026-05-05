@@ -1,6 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileDown, CheckCircle2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Upload, X, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,8 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { agentReleasesApi } from '@/api';
-import { useToast } from '@/hooks/use-toast';
+import { useUploadRelease } from './UploadReleaseContext';
 
 interface UploadReleaseModalProps {
   open: boolean;
@@ -43,8 +41,6 @@ function formatBytes(bytes: number): string {
 }
 
 export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalProps) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -53,41 +49,26 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
   const [arch, setArch] = useState('x64');
   const [changelog, setChangelog] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const { startUpload, isUploading, progress, error, fileName: uploadingFileName } = useUploadRelease();
 
-  const onProgress = useCallback((pct: number) => setUploadProgress(pct), []);
+  // Upload en cours pour CE fichier (pas un autre upload d'une session précédente)
+  const thisUploadActive = isUploading && uploadingFileName === file?.name;
 
-  const uploadMutation = useMutation({
-    mutationFn: (formData: FormData) => agentReleasesApi.upload(formData, onProgress),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agent-releases'] });
-      toast({ title: 'Release uploadée', description: 'L\'exécutable a été publié avec succès.' });
-      // Réinitialisation directe — évite la closure stale sur isPending
-      setFile(null);
-      setVersion('');
-      setPlatform('windows');
-      setArch('x64');
-      setChangelog('');
-      setUploadProgress(0);
-      onOpenChange(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Erreur',
-        description: error.response?.data?.message || 'Impossible d\'uploader la release.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  function handleClose() {
-    if (uploadMutation.isPending) return;
+  function resetForm() {
     setFile(null);
     setVersion('');
     setPlatform('windows');
     setArch('x64');
     setChangelog('');
-    setUploadProgress(0);
+  }
+
+  function handleClose() {
+    if (!thisUploadActive) resetForm();
+    onOpenChange(false);
+  }
+
+  function handleBackground() {
+    // Ferme le modal, l'upload continue — le header affiche la progression
     onOpenChange(false);
   }
 
@@ -104,17 +85,17 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
 
   function handleSubmit() {
     if (!file || !version || !platform) return;
-    setUploadProgress(0);
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('version', version.trim());
     formData.append('platform', platform);
     formData.append('arch', arch);
     if (changelog.trim()) formData.append('changelog', changelog.trim());
-    uploadMutation.mutate(formData);
+    startUpload(formData, file.name);
+    // Modal reste ouvert pour afficher la progression
   }
 
-  const canSubmit = !!file && !!version.trim() && !!platform && !uploadMutation.isPending;
+  const canSubmit = !!file && !!version.trim() && !!platform && !isUploading;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -223,44 +204,38 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
           </div>
         </div>
 
-        {uploadMutation.isPending && (
-          <div className="space-y-1.5 px-1">
+        {thisUploadActive && (
+          <div className="space-y-1.5 px-1 pb-1">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                {uploadProgress < 100 ? 'Transfert vers le serveur…' : (
-                  <span className="flex items-center gap-1 text-emerald-600">
-                    <CheckCircle2 className="w-3 h-3" /> Traitement en cours…
-                  </span>
-                )}
-              </span>
-              <span className="font-medium tabular-nums">{uploadProgress}%</span>
+              <span>{progress < 100 ? 'Transfert en cours…' : 'Traitement MinIO…'}</span>
+              <span className="font-semibold tabular-nums text-primary">{progress}%</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={uploadMutation.isPending}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {uploadMutation.isPending ? (
-              <>
-                <Upload className="h-4 w-4 mr-2 animate-bounce" />
-                Upload en cours…
-              </>
-            ) : (
-              <>
+          {thisUploadActive ? (
+            <Button variant="outline" onClick={handleBackground} className="w-full sm:w-auto">
+              <Upload className="h-4 w-4 mr-2 animate-pulse" />
+              Continuer en arrière-plan
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleClose}>
+                Annuler
+              </Button>
+              <Button onClick={handleSubmit} disabled={!canSubmit}>
                 <Upload className="h-4 w-4 mr-2" />
                 Publier la release
-              </>
-            )}
-          </Button>
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
