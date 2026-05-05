@@ -382,6 +382,14 @@ export const agentReleasesApi = {
   getAll: () =>
     api.get<AgentRelease[]>('/admin/agent-releases'),
 
+  upload: (formData: FormData, onUploadProgress?: (pct: number) => void) =>
+    api.post<AgentRelease>('/admin/agent-releases', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onUploadProgress
+        ? (e) => onUploadProgress(Math.round((e.loaded * 100) / (e.total ?? e.loaded)))
+        : undefined,
+    }),
+
   getPresignedUrl: (params: {
     filename: string;
     contentType: string;
