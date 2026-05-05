@@ -3,6 +3,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { agentReleasesApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 
+interface UploadMeta {
+  version: string;
+  platform: string;
+  arch: string;
+  changelog?: string;
+}
+
 interface UploadState {
   isUploading: boolean;
   progress: number;
@@ -11,7 +18,7 @@ interface UploadState {
 }
 
 interface UploadReleaseContextValue extends UploadState {
-  startUpload: (formData: FormData, fileName: string) => void;
+  startUpload: (file: File, meta: UploadMeta) => void;
   dismiss: () => void;
 }
 
@@ -27,20 +34,24 @@ export function UploadReleaseProvider({ children }: { children: ReactNode }) {
     error: null,
   });
 
-  const startUpload = useCallback((formData: FormData, fileName: string) => {
-    setState({ isUploading: true, progress: 0, fileName, error: null });
+  const startUpload = useCallback((file: File, meta: UploadMeta) => {
+    setState({ isUploading: true, progress: 0, fileName: file.name, error: null });
 
-    agentReleasesApi.upload(
-      formData,
-      (pct) => setState((s) => ({ ...s, progress: pct })),
-    )
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('version', meta.version);
+    formData.append('platform', meta.platform);
+    formData.append('arch', meta.arch);
+    if (meta.changelog) formData.append('changelog', meta.changelog);
+
+    agentReleasesApi.upload(formData, (pct) => setState((s) => ({ ...s, progress: pct })))
       .then(() => {
         setState((s) => ({ ...s, isUploading: false, progress: 100 }));
         queryClient.invalidateQueries({ queryKey: ['agent-releases'] });
-        toast({ title: 'Release publiée', description: `${fileName} a été uploadé avec succès.` });
+        toast({ title: 'Release publiée', description: `${file.name} a été uploadé avec succès.` });
       })
       .catch((err: any) => {
-        const msg = err?.response?.data?.message ?? 'Erreur lors de l\'upload.';
+        const msg = err?.response?.data?.message ?? err?.message ?? 'Erreur lors de l\'upload.';
         setState((s) => ({ ...s, isUploading: false, error: msg }));
         toast({ title: 'Erreur upload', description: msg, variant: 'destructive' });
       });

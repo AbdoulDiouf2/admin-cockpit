@@ -85,14 +85,12 @@ export function UploadReleaseModal({ open, onOpenChange }: UploadReleaseModalPro
 
   function handleSubmit() {
     if (!file || !version || !platform) return;
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    formData.append('version', version.trim());
-    formData.append('platform', platform);
-    formData.append('arch', arch);
-    if (changelog.trim()) formData.append('changelog', changelog.trim());
-    startUpload(formData, file.name);
-    // Modal reste ouvert pour afficher la progression
+    startUpload(file, {
+      version: version.trim(),
+      platform,
+      arch,
+      changelog: changelog.trim() || undefined,
+    });
   }
 
   const canSubmit = !!file && !!version.trim() && !!platform && !isUploading;
