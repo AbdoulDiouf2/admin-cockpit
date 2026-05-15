@@ -28,6 +28,7 @@ import type { WidgetTemplate } from '@/types';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
+  subtype: z.string().optional(),
   description: z.string().optional(),
   defaultConfig: z.string().refine((v) => {
     try { JSON.parse(v); return true; } catch { return false; }
@@ -49,13 +50,14 @@ export function EditWidgetTemplateModal({ open, onOpenChange, template }: Props)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', description: '', defaultConfig: '{}' },
+    defaultValues: { name: '', subtype: 'default', description: '', defaultConfig: '{}' },
   });
 
   useEffect(() => {
     if (template) {
       form.reset({
         name: template.name,
+        subtype: template.subtype ?? 'default',
         description: template.description ?? '',
         defaultConfig: JSON.stringify(template.defaultConfig, null, 2),
       });
@@ -66,6 +68,7 @@ export function EditWidgetTemplateModal({ open, onOpenChange, template }: Props)
     mutationFn: (values: FormValues) =>
       widgetTemplatesApi.update(template!.id, {
         name: values.name,
+        subtype: values.subtype || 'default',
         description: values.description,
         defaultConfig: JSON.parse(values.defaultConfig),
       }),
@@ -88,24 +91,43 @@ export function EditWidgetTemplateModal({ open, onOpenChange, template }: Props)
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>
-            {t('kpiStore.editTemplate')} — <code className="text-sm">{template?.vizType}</code>
+            {t('kpiStore.editTemplate')} —{' '}
+            <code className="text-sm">{template?.vizType}</code>
+            {template?.subtype && template.subtype !== 'default' && (
+              <code className="text-sm ml-1 text-muted-foreground">/{template.subtype}</code>
+            )}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('kpiStore.templateName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('kpiStore.templateName')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subtype"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subtype</FormLabel>
+                    <FormControl>
+                      <Input placeholder="default" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="description"

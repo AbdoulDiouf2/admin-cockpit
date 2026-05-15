@@ -88,7 +88,14 @@ export function WidgetTemplatesTab({ onCreateClick }: WidgetTemplatesTabProps = 
       accessorKey: 'vizType',
       header: t('kpiStore.templateVizType'),
       cell: ({ row }) => (
-        <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{row.getValue('vizType')}</code>
+        <div className="flex items-center gap-1">
+          <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{row.getValue('vizType')}</code>
+          {row.original.subtype && row.original.subtype !== 'default' && (
+            <code className="text-xs bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded">
+              {row.original.subtype}
+            </code>
+          )}
+        </div>
       ),
     },
     {
@@ -188,7 +195,10 @@ export function WidgetTemplatesTab({ onCreateClick }: WidgetTemplatesTabProps = 
                 {
                   key: 'vizType',
                   label: t('kpiStore.templateVizType'),
-                  options: ['card', 'bar', 'line', 'gauge', 'table', 'pie'].map((v) => ({ label: v, value: v })),
+                  options: [
+                    'card', 'bar', 'line', 'pie', 'donut', 'gauge', 'table',
+                    'scatter', 'treemap', 'map', 'text', 'image', 'ai_insights', 'decomp_tree',
+                  ].map((v) => ({ label: v, value: v })),
                   value: filterVizType,
                   onChange: setFilterVizType,
                 },

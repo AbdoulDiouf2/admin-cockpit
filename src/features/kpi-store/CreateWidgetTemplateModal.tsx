@@ -32,9 +32,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 
+const VIZ_TYPES = [
+  'card', 'bar', 'line', 'pie', 'donut', 'gauge', 'table',
+  'scatter', 'treemap', 'map', 'text', 'image', 'ai_insights', 'decomp_tree',
+] as const;
+
 const formSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
-  vizType: z.enum(['card', 'bar', 'line', 'gauge', 'table']),
+  vizType: z.enum(VIZ_TYPES),
+  subtype: z.string().optional(),
   description: z.string().optional(),
   defaultConfig: z.string().refine((v) => {
     try { JSON.parse(v); return true; } catch { return false; }
@@ -58,6 +64,7 @@ export function CreateWidgetTemplateModal({ open, onOpenChange }: Props) {
     defaultValues: {
       name: '',
       vizType: 'card',
+      subtype: 'default',
       description: '',
       defaultConfig: '{"period":"month"}',
     },
@@ -68,6 +75,7 @@ export function CreateWidgetTemplateModal({ open, onOpenChange }: Props) {
       widgetTemplatesApi.create({
         name: values.name,
         vizType: values.vizType,
+        subtype: values.subtype || 'default',
         description: values.description,
         defaultConfig: JSON.parse(values.defaultConfig),
       }),
@@ -94,20 +102,20 @@ export function CreateWidgetTemplateModal({ open, onOpenChange }: Props) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('kpiStore.templateName')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Carte KPI" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('kpiStore.templateName')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Carte KPI" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="vizType"
@@ -121,13 +129,24 @@ export function CreateWidgetTemplateModal({ open, onOpenChange }: Props) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="card">Card</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="line">Line</SelectItem>
-                        <SelectItem value="gauge">Gauge</SelectItem>
-                        <SelectItem value="table">Table</SelectItem>
+                        {VIZ_TYPES.map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subtype"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subtype</FormLabel>
+                    <FormControl>
+                      <Input placeholder="default" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

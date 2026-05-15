@@ -82,9 +82,16 @@ export function WidgetTemplateDetailPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
-            <code className="text-sm bg-muted px-2 py-0.5 rounded text-primary">
-              {template.vizType}
-            </code>
+            <div className="flex items-center gap-1 mt-0.5">
+              <code className="text-sm bg-muted px-2 py-0.5 rounded text-primary">
+                {template.vizType}
+              </code>
+              {template.subtype && template.subtype !== 'default' && (
+                <code className="text-sm bg-muted/60 px-2 py-0.5 rounded text-muted-foreground">
+                  {template.subtype}
+                </code>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -126,6 +133,10 @@ export function WidgetTemplateDetailPage() {
                   {t('kpiStore.templateVizType')}
                 </p>
                 <code className="text-sm bg-muted px-1.5 py-0.5 rounded">{template.vizType}</code>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Subtype</p>
+                <code className="text-sm bg-muted px-1.5 py-0.5 rounded">{template.subtype || 'default'}</code>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t('common.status')}</p>
@@ -174,7 +185,14 @@ export function WidgetTemplateDetailPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Type de viz.</span>
-              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{template.vizType}</code>
+              <div className="flex items-center gap-1">
+                <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{template.vizType}</code>
+                {template.subtype && template.subtype !== 'default' && (
+                  <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded text-muted-foreground">
+                    {template.subtype}
+                  </code>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

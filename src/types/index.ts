@@ -244,6 +244,7 @@ export interface WidgetTemplate {
   id: string;
   name: string;
   vizType: string;
+  subtype: string;
   description?: string;
   defaultConfig: Record<string, unknown>;
   isActive: boolean;
