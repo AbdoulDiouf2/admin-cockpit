@@ -485,7 +485,7 @@ export function CreateKpiWizard({ open, onOpenChange }: Props) {
             )}
 
             {/* ── Navigation ── */}
-            <div className="flex justify-between pt-4 border-t">
+            <div key={step} className="flex justify-between pt-4 border-t">
               <Button type="button" variant="outline" onClick={step === 1 ? handleClose : handleBack}>
                 {step === 1 ? 'Annuler' : <><ChevronLeft className="h-4 w-4 mr-1" />Précédent</>}
               </Button>
