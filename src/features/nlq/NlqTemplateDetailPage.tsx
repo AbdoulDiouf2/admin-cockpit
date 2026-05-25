@@ -9,6 +9,7 @@ import {
     ExternalLink,
     CheckCircle2,
     XCircle,
+    Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import { nlqApi } from '@/api';
 import { useToast } from '@/hooks/use-toast';
 import { SqlCodeBlock } from '@/components/shared/SqlCodeBlock';
 import { useTranslation } from 'react-i18next';
+import { EditNlqTemplateModal } from './EditNlqTemplateModal';
 
 export function NlqTemplateDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -29,6 +31,7 @@ export function NlqTemplateDetailPage() {
     const queryClient = useQueryClient();
     const [toggleOpen, setToggleOpen] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const { data: template, isLoading, error } = useNlqTemplate(id!);
 
@@ -73,6 +76,10 @@ export function NlqTemplateDetailPage() {
                     <h1 className="text-2xl font-bold tracking-tight">Template SQL</h1>
                     <p className="text-muted-foreground">Configuration technique de la réponse NLQ</p>
                 </div>
+                <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Modifier SQL
+                </Button>
                 <Button
                     variant={active ? 'destructive' : 'default'}
                     size="sm"
@@ -154,6 +161,19 @@ export function NlqTemplateDetailPage() {
                 isPending={isToggling}
                 confirmLabel={t('common.confirm')}
                 cancelLabel={t('common.cancel')}
+            />
+
+            <EditNlqTemplateModal
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                template={template ? {
+                    id: id!,
+                    intentKey: template.intentKey,
+                    sageType: template.sageType,
+                    sqlQuery: template.sqlQuery,
+                    defaultVizType: template.defaultVizType,
+                } : null}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['nlq-templates', id] })}
             />
         </div>
     );
