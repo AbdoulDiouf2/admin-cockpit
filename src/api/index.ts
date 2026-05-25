@@ -196,6 +196,9 @@ export const kpiDefinitionsApi = {
   getById: (id: string) =>
     api.get<KpiDefinition>(`/admin/kpi-definitions/${id}`),
 
+  createFull: (data: Record<string, any>) =>
+    api.post('/admin/kpi-full', data),
+
   create: (data: Omit<KpiDefinition, 'id' | 'isActive' | 'createdAt'>) =>
     api.post<KpiDefinition>('/admin/kpi-definitions', data),
 
@@ -300,6 +303,24 @@ export const nlqApi = {
 
   getSessionById: (id: string) =>
     api.get<any>(`/admin/nlq-sessions/${id}`),
+
+  createIntent: (data: { key: string; label: string; description?: string; category: string; keywords?: string[] }) =>
+    api.post<any>('/admin/nlq-intents', data),
+
+  updateIntent: (id: string, data: { label?: string; description?: string; category?: string; keywords?: string[] }) =>
+    api.patch<any>(`/admin/nlq-intents/${id}`, data),
+
+  deleteIntent: (id: string) =>
+    api.delete<any>(`/admin/nlq-intents/${id}`),
+
+  createTemplate: (data: { intentKey: string; sageType: string; sqlQuery: string; defaultVizType?: string }) =>
+    api.post<any>('/admin/nlq-templates', data),
+
+  updateTemplate: (id: string, data: { sqlQuery?: string; defaultVizType?: string }) =>
+    api.patch<any>(`/admin/nlq-templates/${id}`, data),
+
+  deleteTemplate: (id: string) =>
+    api.delete<any>(`/admin/nlq-templates/${id}`),
 };
 
 // Billing Admin (read-only, SuperAdmin)

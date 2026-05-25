@@ -1,20 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nlqApi } from '@/api';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/shared/FilterBar';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useToast } from '@/hooks/use-toast';
+import { EditNlqIntentModal } from './EditNlqIntentModal';
 
 interface NlqIntent {
     id: string;
@@ -22,29 +24,49 @@ interface NlqIntent {
     label: string;
     category: string;
     keywords: string[];
+    description?: string;
 }
 
 export function NlqIntentsTab() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [intents, setIntents] = useState<NlqIntent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
+    const [editTarget, setEditTarget] = useState<NlqIntent | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<NlqIntent | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    useEffect(() => {
-        const fetchIntents = async () => {
-            try {
-                const response = await nlqApi.getAllIntents();
-                setIntents(response.data);
-            } catch (error) {
-                console.error('Failed to fetch intents:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchIntents();
-    }, []);
+    const fetchIntents = async () => {
+        setIsLoading(true);
+        try {
+            const response = await nlqApi.getAllIntents();
+            setIntents(response.data);
+        } catch (error) {
+            console.error('Failed to fetch intents:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchIntents(); }, []);
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        try {
+            await nlqApi.deleteIntent(deleteTarget.id);
+            toast({ title: 'Succès', description: 'Intent supprimé (templates associés supprimés).' });
+            await fetchIntents();
+        } catch (err: any) {
+            toast({ title: 'Erreur', description: err.response?.data?.message || 'Erreur serveur', variant: 'destructive' });
+        } finally {
+            setIsDeleting(false);
+            setDeleteTarget(null);
+        }
+    };
 
     const categoryOptions = useMemo(() => {
         const cats = [...new Set(intents.map((i) => i.category).filter(Boolean))].sort();
@@ -55,12 +77,7 @@ export function NlqIntentsTab() {
         const q = search.toLowerCase();
         return intents.filter((i) => {
             if (filterCategory && i.category !== filterCategory) return false;
-            if (q) {
-                return (
-                    i.label.toLowerCase().includes(q) ||
-                    i.key.toLowerCase().includes(q)
-                );
-            }
+            if (q) return i.label.toLowerCase().includes(q) || i.key.toLowerCase().includes(q);
             return true;
         });
     }, [intents, search, filterCategory]);
@@ -81,15 +98,13 @@ export function NlqIntentsTab() {
                     />
                 </div>
                 <FilterBar
-                    filters={[
-                        {
-                            key: 'category',
-                            label: t('nlqStore.intentCategory'),
-                            options: categoryOptions,
-                            value: filterCategory,
-                            onChange: setFilterCategory,
-                        },
-                    ]}
+                    filters={[{
+                        key: 'category',
+                        label: t('nlqStore.intentCategory'),
+                        options: categoryOptions,
+                        value: filterCategory,
+                        onChange: setFilterCategory,
+                    }]}
                     onReset={resetFilters}
                     hasActiveFilters={hasActiveFilters}
                 />
@@ -103,20 +118,17 @@ export function NlqIntentsTab() {
                             <TableHead>{t('nlqStore.intentLabel')}</TableHead>
                             <TableHead>{t('nlqStore.intentCategory')}</TableHead>
                             <TableHead>{t('nlqStore.intentKeywords')}</TableHead>
+                            <TableHead />
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24">
-                                    {t('common.loading')}
-                                </TableCell>
+                                <TableCell colSpan={5} className="text-center h-24">{t('common.loading')}</TableCell>
                             </TableRow>
                         ) : filteredIntents.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24">
-                                    {t('common.noData')}
-                                </TableCell>
+                                <TableCell colSpan={5} className="text-center h-24">{t('common.noData')}</TableCell>
                             </TableRow>
                         ) : (
                             filteredIntents.map((intent) => (
@@ -137,11 +149,34 @@ export function NlqIntentsTab() {
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {intent.keywords.map((kw, idx) => (
-                                                <Badge key={idx} variant="secondary" className="text-[10px]">
-                                                    {kw}
-                                                </Badge>
+                                                <Badge key={idx} variant="secondary" className="text-[10px]">{kw}</Badge>
                                             ))}
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => navigate(`/nlq-store/intents/${intent.id || intent.key}`)}>
+                                                    <Eye className="h-4 w-4 mr-2" />{t('common.view')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setEditTarget(intent)}>
+                                                    <Pencil className="h-4 w-4 mr-2" />Modifier
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={() => setDeleteTarget(intent)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />Supprimer
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -149,6 +184,24 @@ export function NlqIntentsTab() {
                     </TableBody>
                 </Table>
             </div>
+
+            <EditNlqIntentModal
+                open={editTarget !== null}
+                onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+                intent={editTarget}
+                onSuccess={fetchIntents}
+            />
+
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+                title="Supprimer l'intent NLQ"
+                description={`Supprimer "${deleteTarget?.key}" et tous ses templates SQL associés. Irréversible.`}
+                onConfirm={handleDelete}
+                isPending={isDeleting}
+                confirmLabel="Supprimer"
+                cancelLabel={t('common.cancel')}
+            />
         </div>
     );
 }

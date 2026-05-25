@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { KpiDefinitionsTab } from './KpiDefinitionsTab';
 import { WidgetTemplatesTab } from './WidgetTemplatesTab';
 import { KpiPacksTab } from './KpiPacksTab';
-import { CreateKpiDefinitionModal } from './CreateKpiDefinitionModal';
+import { CreateKpiWizard } from './CreateKpiWizard';
 import { CreateWidgetTemplateModal } from './CreateWidgetTemplateModal';
 import { CreateKpiPackModal } from './CreateKpiPackModal';
 
@@ -76,7 +76,7 @@ export function KpiStorePage() {
         </CardContent>
       </Card>
 
-      <CreateKpiDefinitionModal open={isCreateKpiOpen} onOpenChange={setIsCreateKpiOpen} />
+      <CreateKpiWizard open={isCreateKpiOpen} onOpenChange={setIsCreateKpiOpen} />
       <CreateWidgetTemplateModal open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen} />
       <CreateKpiPackModal open={isCreatePackOpen} onOpenChange={setIsCreatePackOpen} />
     </div>

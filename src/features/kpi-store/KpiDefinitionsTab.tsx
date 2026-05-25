@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useKpiDefinitions } from '@/hooks/use-api';
 import type { KpiDefinition } from '@/types';
 import { useNavigate } from 'react-router-dom';
-import { CreateKpiDefinitionModal } from './CreateKpiDefinitionModal';
+import { CreateKpiWizard } from './CreateKpiWizard';
 import { EditKpiDefinitionModal } from './EditKpiDefinitionModal';
 
 interface KpiDefinitionsTabProps {
@@ -216,7 +216,7 @@ export function KpiDefinitionsTab({ onCreateClick }: KpiDefinitionsTabProps = {}
         />
       )}
 
-      <CreateKpiDefinitionModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <CreateKpiWizard open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
       <EditKpiDefinitionModal
         open={editKpi !== null}

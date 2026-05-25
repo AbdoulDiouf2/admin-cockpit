@@ -1,30 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { nlqApi } from '@/api';
 import { Input } from '@/components/ui/input';
-import { Search, MoreHorizontal, Eye } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { useToast } from '@/hooks/use-toast';
+import { EditNlqTemplateModal } from './EditNlqTemplateModal';
 
 interface NlqTemplate {
     id: string;
@@ -48,8 +40,12 @@ export function NlqTemplatesTab() {
     const [filterStatus, setFilterStatus] = useState('');
     const [toggleTarget, setToggleTarget] = useState<NlqTemplate | null>(null);
     const [isToggling, setIsToggling] = useState(false);
+    const [editTarget, setEditTarget] = useState<NlqTemplate | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<NlqTemplate | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchTemplates = async () => {
+        setIsLoading(true);
         try {
             const response = await nlqApi.getAllTemplates();
             setTemplates(response.data);
@@ -60,9 +56,7 @@ export function NlqTemplatesTab() {
         }
     };
 
-    useEffect(() => {
-        fetchTemplates();
-    }, []);
+    useEffect(() => { fetchTemplates(); }, []);
 
     const handleToggle = async () => {
         if (!toggleTarget) return;
@@ -72,14 +66,25 @@ export function NlqTemplatesTab() {
             toast({ title: t('common.success'), description: t('nlqStore.templateToggleSuccess') });
             await fetchTemplates();
         } catch (error: any) {
-            toast({
-                title: t('common.error'),
-                description: error.response?.data?.message || t('common.error'),
-                variant: 'destructive',
-            });
+            toast({ title: t('common.error'), description: error.response?.data?.message || t('common.error'), variant: 'destructive' });
         } finally {
             setIsToggling(false);
             setToggleTarget(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        try {
+            await nlqApi.deleteTemplate(deleteTarget.id);
+            toast({ title: 'Succès', description: 'Template SQL supprimé.' });
+            await fetchTemplates();
+        } catch (err: any) {
+            toast({ title: 'Erreur', description: err.response?.data?.message || 'Erreur serveur', variant: 'destructive' });
+        } finally {
+            setIsDeleting(false);
+            setDeleteTarget(null);
         }
     };
 
@@ -160,15 +165,11 @@ export function NlqTemplatesTab() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">
-                                    {t('common.loading')}
-                                </TableCell>
+                                <TableCell colSpan={6} className="text-center h-24">{t('common.loading')}</TableCell>
                             </TableRow>
                         ) : filteredTemplates.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">
-                                    {t('common.noData')}
-                                </TableCell>
+                                <TableCell colSpan={6} className="text-center h-24">{t('common.noData')}</TableCell>
                             </TableRow>
                         ) : (
                             filteredTemplates.map((tpl) => (
@@ -207,8 +208,10 @@ export function NlqTemplatesTab() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                                                 <DropdownMenuItem onClick={() => navigate(`/nlq-store/templates/${tpl.id}`)}>
-                                                    <Eye className="h-4 w-4 mr-2" />
-                                                    {t('common.view')}
+                                                    <Eye className="h-4 w-4 mr-2" />{t('common.view')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setEditTarget(tpl)}>
+                                                    <Pencil className="h-4 w-4 mr-2" />Modifier SQL
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
@@ -216,6 +219,12 @@ export function NlqTemplatesTab() {
                                                     onClick={() => setToggleTarget(tpl)}
                                                 >
                                                     {isActive(tpl) ? t('kpiStore.deactivate') : t('kpiStore.activate')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={() => setDeleteTarget(tpl)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />Supprimer
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -227,6 +236,13 @@ export function NlqTemplatesTab() {
                 </Table>
             </div>
 
+            <EditNlqTemplateModal
+                open={editTarget !== null}
+                onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+                template={editTarget}
+                onSuccess={fetchTemplates}
+            />
+
             <ConfirmDialog
                 open={toggleTarget !== null}
                 onOpenChange={(open) => { if (!open) setToggleTarget(null); }}
@@ -235,6 +251,17 @@ export function NlqTemplatesTab() {
                 onConfirm={handleToggle}
                 isPending={isToggling}
                 confirmLabel={t('common.confirm')}
+                cancelLabel={t('common.cancel')}
+            />
+
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+                title="Supprimer le template SQL"
+                description={`Supprimer le template "${deleteTarget?.intentKey}" (Sage ${deleteTarget?.sageType}). Irréversible.`}
+                onConfirm={handleDelete}
+                isPending={isDeleting}
+                confirmLabel="Supprimer"
                 cancelLabel={t('common.cancel')}
             />
         </div>
