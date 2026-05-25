@@ -21,7 +21,7 @@ import { useKpiDefinitions } from '@/hooks/use-api';
 import type { KpiDefinition } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { CreateKpiWizard } from './CreateKpiWizard';
-import { EditKpiDefinitionModal } from './EditKpiDefinitionModal';
+import { EditKpiWizard } from './EditKpiWizard';
 
 interface KpiDefinitionsTabProps {
   onCreateClick?: () => void;
@@ -218,7 +218,7 @@ export function KpiDefinitionsTab({ onCreateClick }: KpiDefinitionsTabProps = {}
 
       <CreateKpiWizard open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
-      <EditKpiDefinitionModal
+      <EditKpiWizard
         open={editKpi !== null}
         onOpenChange={(open) => { if (!open) setEditKpi(null); }}
         kpi={editKpi}

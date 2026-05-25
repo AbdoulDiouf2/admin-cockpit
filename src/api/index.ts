@@ -199,6 +199,9 @@ export const kpiDefinitionsApi = {
   createFull: (data: Record<string, any>) =>
     api.post('/admin/kpi-full', data),
 
+  updateFull: (id: string, data: Record<string, any>) =>
+    api.patch(`/admin/kpi-full/${id}`, data),
+
   create: (data: Omit<KpiDefinition, 'id' | 'isActive' | 'createdAt'>) =>
     api.post<KpiDefinition>('/admin/kpi-definitions', data),
 
