@@ -401,6 +401,31 @@ export const storageApi = {
     api.post<{ migratedBugs: number; migratedReleases: number; total: number }>('/admin/storage/update-public-url', { oldPrefix, newPrefix }),
 };
 
+// Demo Requests
+export type DemoRequestStatus = 'NEW' | 'CONTACTED' | 'DEMO_SCHEDULED' | 'CONVERTED' | 'REJECTED';
+
+export interface DemoRequest {
+  id: string;
+  email: string;
+  company: string;
+  message?: string;
+  status: DemoRequestStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const demoRequestsApi = {
+  getAll: (status?: DemoRequestStatus) =>
+    api.get<DemoRequest[]>('/admin/demo-requests', { params: status ? { status } : {} }),
+
+  update: (id: string, data: { status?: DemoRequestStatus; notes?: string }) =>
+    api.patch<DemoRequest>(`/admin/demo-requests/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete(`/admin/demo-requests/${id}`),
+};
+
 // Agent Releases
 export const agentReleasesApi = {
   getAll: () =>

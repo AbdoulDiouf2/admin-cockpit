@@ -23,6 +23,7 @@ import {
   Bug,
   Activity,
   FileDown,
+  CalendarCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +38,7 @@ const navCategories = [
     titleKey: 'nav.category.general',
     items: [
       { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+      { path: '/demo-requests', icon: CalendarCheck, labelKey: 'nav.demoRequests' },
     ]
   },
   {

@@ -42,6 +42,7 @@ import { OnboardingPage } from './features/onboarding/OnboardingPage';
 import { BugTrackerPage } from './features/bug-tracker/BugTrackerPage';
 import { CreateBugPage } from './features/bug-tracker/CreateBugPage';
 import { BugDetailPage } from './features/bug-tracker/BugDetailPage';
+import { DemoRequestsPage } from './features/demo-requests/DemoRequestsPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { UploadReleaseProvider } from './features/agents/UploadReleaseContext';
 
@@ -111,6 +112,7 @@ export default function App() {
                 <Route path="/bug-tracker" element={<BugTrackerPage />} />
                 <Route path="/bug-tracker/new" element={<CreateBugPage />} />
                 <Route path="/bug-tracker/:id" element={<BugDetailPage />} />
+                <Route path="/demo-requests" element={<DemoRequestsPage />} />
               </Routes>
             </MainLayout>
             </UploadReleaseProvider>
