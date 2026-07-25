@@ -22,9 +22,10 @@ interface CalendarProps {
   locale?: Locale;
   initialFocus?: boolean;
   className?: string;
+  disabled?: (date: Date) => boolean;
 }
 
-export function Calendar({ selected, onSelect, locale, className }: CalendarProps) {
+export function Calendar({ selected, onSelect, locale, className, disabled }: CalendarProps) {
   const [viewMonth, setViewMonth] = useState(selected ?? new Date());
 
   const start = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
@@ -74,17 +75,19 @@ export function Calendar({ selected, onSelect, locale, className }: CalendarProp
           const isSelected = selected ? isSameDay(day, selected) : false;
           const isOutside = !isSameMonth(day, viewMonth);
           const isToday = isSameDay(day, new Date());
+          const isDisabled = disabled?.(day) ?? false;
           return (
             <button
               key={day.toISOString()}
               type="button"
-              onClick={() => onSelect?.(day)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onSelect?.(day)}
               className={cn(
                 buttonVariants({ variant: 'ghost' }),
                 'h-8 w-8 p-0 font-normal mx-auto',
                 isSelected && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
                 !isSelected && isToday && 'bg-accent text-accent-foreground',
-                isOutside && 'text-muted-foreground opacity-50',
+                (isOutside || isDisabled) && 'text-muted-foreground opacity-30 cursor-not-allowed pointer-events-none',
               )}
             >
               {format(day, 'd')}

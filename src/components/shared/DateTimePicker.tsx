@@ -14,9 +14,10 @@ interface DateTimePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: (date: Date) => boolean;
 }
 
-export function DateTimePicker({ value, onChange, placeholder, className }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange, placeholder, className, disabled }: DateTimePickerProps) {
   const { i18n } = useTranslation();
   const locale = i18n.language === 'fr' ? fr : undefined;
 
@@ -56,6 +57,7 @@ export function DateTimePicker({ value, onChange, placeholder, className }: Date
           selected={parsed}
           onSelect={handleDaySelect}
           locale={locale}
+          disabled={disabled}
         />
         <div className="border-t p-3 flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground shrink-0" />

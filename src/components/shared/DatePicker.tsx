@@ -12,9 +12,10 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: (date: Date) => boolean;
 }
 
-export function DatePicker({ value, onChange, placeholder, className }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder, className, disabled }: DatePickerProps) {
   const { i18n } = useTranslation();
   const locale = i18n.language === 'fr' ? fr : undefined;
 
@@ -36,6 +37,7 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
           selected={selected}
           onSelect={(date) => onChange(format(date, 'yyyy-MM-dd'))}
           locale={locale}
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>

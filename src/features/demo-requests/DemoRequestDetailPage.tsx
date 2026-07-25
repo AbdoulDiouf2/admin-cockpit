@@ -269,7 +269,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.contact.date')}</Label>
-                    <DatePicker value={meta.contactedAt} onChange={(v) => setMetaField('contactedAt', v)} />
+                    <DatePicker value={meta.contactedAt} onChange={(v) => setMetaField('contactedAt', v)} disabled={(d) => d > new Date()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.contact.channel')}</Label>
@@ -307,7 +307,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.demo.dateTime')}</Label>
-                    <DateTimePicker value={meta.demoAt} onChange={(v) => setMetaField('demoAt', v)} />
+                    <DateTimePicker value={meta.demoAt} onChange={(v) => setMetaField('demoAt', v)} disabled={(d) => { const today = new Date(); today.setHours(0,0,0,0); return d < today; }} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.demo.link')}</Label>
@@ -343,7 +343,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.converted.date')}</Label>
-                    <DatePicker value={meta.convertedAt} onChange={(v) => setMetaField('convertedAt', v)} />
+                    <DatePicker value={meta.convertedAt} onChange={(v) => setMetaField('convertedAt', v)} disabled={(d) => d > new Date()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.converted.plan')}</Label>
