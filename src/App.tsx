@@ -43,6 +43,7 @@ import { BugTrackerPage } from './features/bug-tracker/BugTrackerPage';
 import { CreateBugPage } from './features/bug-tracker/CreateBugPage';
 import { BugDetailPage } from './features/bug-tracker/BugDetailPage';
 import { DemoRequestsPage } from './features/demo-requests/DemoRequestsPage';
+import { DemoRequestDetailPage } from './features/demo-requests/DemoRequestDetailPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { UploadReleaseProvider } from './features/agents/UploadReleaseContext';
 
@@ -113,6 +114,7 @@ export default function App() {
                 <Route path="/bug-tracker/new" element={<CreateBugPage />} />
                 <Route path="/bug-tracker/:id" element={<BugDetailPage />} />
                 <Route path="/demo-requests" element={<DemoRequestsPage />} />
+                <Route path="/demo-requests/:id" element={<DemoRequestDetailPage />} />
               </Routes>
             </MainLayout>
             </UploadReleaseProvider>

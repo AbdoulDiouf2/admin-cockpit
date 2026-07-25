@@ -1,0 +1,422 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Mail,
+  Calendar,
+  MessageSquare,
+  ChevronDown,
+  Check,
+  Loader2,
+  StickyNote,
+  Phone,
+  Video,
+  Link2,
+  BadgeCheck,
+  XCircle,
+  ExternalLink,
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import {
+  demoRequestsApi,
+  DemoRequestStatus,
+  DemoRequestStatusMeta,
+} from '@/api';
+
+const STATUS_BADGE: Record<DemoRequestStatus, { labelKey: string; className: string }> = {
+  NEW: { labelKey: 'demoRequests.status.NEW', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  CONTACTED: { labelKey: 'demoRequests.status.CONTACTED', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  DEMO_SCHEDULED: { labelKey: 'demoRequests.status.DEMO_SCHEDULED', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
+  CONVERTED: { labelKey: 'demoRequests.status.CONVERTED', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+  REJECTED: { labelKey: 'demoRequests.status.REJECTED', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+};
+
+const ALL_STATUSES: DemoRequestStatus[] = ['NEW', 'CONTACTED', 'DEMO_SCHEDULED', 'CONVERTED', 'REJECTED'];
+
+export function DemoRequestDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+
+  const dateLocale = i18n.language === 'fr' ? fr : undefined;
+
+  const { data: request, isLoading, error } = useQuery({
+    queryKey: ['demo-request', id],
+    queryFn: async () => {
+      const resp = await demoRequestsApi.getById(id!);
+      return resp.data;
+    },
+    enabled: !!id,
+  });
+
+  const [notes, setNotes] = useState('');
+  const [meta, setMeta] = useState<DemoRequestStatusMeta>({});
+
+  useEffect(() => {
+    if (request) {
+      setNotes(request.notes ?? '');
+      setMeta(request.statusMeta ?? {});
+    }
+  }, [request]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data: { status?: DemoRequestStatus; notes?: string; statusMeta?: DemoRequestStatusMeta }) =>
+      demoRequestsApi.update(id!, data),
+    onSuccess: (resp) => {
+      queryClient.setQueryData(['demo-request', id], resp.data);
+      queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['demo-requests-stats'] });
+      toast({ title: t('common.success'), description: t('demoRequests.updateSuccess') });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t('common.error'),
+        description: err.response?.data?.message || t('demoRequests.updateError'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  function saveNotes() {
+    updateMutation.mutate({ notes: notes || undefined });
+  }
+
+  function saveMeta() {
+    updateMutation.mutate({ statusMeta: meta });
+  }
+
+  function changeStatus(status: DemoRequestStatus) {
+    updateMutation.mutate({ status });
+  }
+
+  function setMetaField(field: keyof DemoRequestStatusMeta, value: string) {
+    setMeta((prev) => ({ ...prev, [field]: value || undefined }));
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-[400px] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !request) {
+    return (
+      <div className="h-[400px] flex items-center justify-center text-destructive">
+        {t('demoRequests.detail.notFound')}
+      </div>
+    );
+  }
+
+  const status = request.status;
+  const badge = STATUS_BADGE[status];
+  const isStatusPending = updateMutation.isPending && updateMutation.variables != null && 'status' in updateMutation.variables;
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      {/* Back */}
+      <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate('/demo-requests')}>
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        {t('demoRequests.title')}
+      </Button>
+
+      {/* Header */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold">{request.company}</h1>
+              <a
+                href={`mailto:${request.email}`}
+                className="text-sm text-primary hover:underline flex items-center gap-1 mt-1"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {request.email}
+              </a>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={isStatusPending}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium cursor-pointer hover:opacity-75 transition-opacity disabled:opacity-50 ${badge.className}`}
+                >
+                  {isStatusPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {t(badge.labelKey)}
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {ALL_STATUSES.map((s) => {
+                  const b = STATUS_BADGE[s];
+                  return (
+                    <DropdownMenuItem
+                      key={s}
+                      onClick={() => { if (s !== status) changeStatus(s); }}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="w-3.5 shrink-0">
+                        {s === status && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${b.className}`}>
+                        {t(b.labelKey)}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-4 w-4 shrink-0" />
+            <span>
+              {t('demoRequests.detail.submittedOn', {
+                date: format(new Date(request.createdAt), "d MMMM yyyy 'à' HH:mm", { locale: dateLocale }),
+              })}
+            </span>
+          </div>
+          {request.message && (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
+              <p className="text-foreground leading-relaxed">{request.message}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* CONTACTED */}
+      {status === 'CONTACTED' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              {t('demoRequests.detail.contact.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.contact.date')}</Label>
+                <Input
+                  type="date"
+                  value={meta.contactedAt ?? ''}
+                  onChange={(e) => setMetaField('contactedAt', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.contact.channel')}</Label>
+                <Select
+                  value={meta.contactChannel ?? ''}
+                  onValueChange={(v) => setMetaField('contactChannel', v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('demoRequests.detail.contact.channelPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">{t('demoRequests.detail.contact.email')}</SelectItem>
+                    <SelectItem value="phone">{t('demoRequests.detail.contact.phone')}</SelectItem>
+                    <SelectItem value="visio">{t('demoRequests.detail.contact.visio')}</SelectItem>
+                    <SelectItem value="linkedin">{t('demoRequests.detail.contact.linkedin')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveMeta} disabled={updateMutation.isPending} size="sm">
+                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* DEMO_SCHEDULED */}
+      {status === 'DEMO_SCHEDULED' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              {t('demoRequests.detail.demo.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.demo.dateTime')}</Label>
+                <Input
+                  type="datetime-local"
+                  value={meta.demoAt ?? ''}
+                  onChange={(e) => setMetaField('demoAt', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.demo.link')}</Label>
+                <Input
+                  type="url"
+                  placeholder={t('demoRequests.detail.demo.linkPlaceholder')}
+                  value={meta.demoLink ?? ''}
+                  onChange={(e) => setMetaField('demoLink', e.target.value)}
+                />
+              </div>
+            </div>
+            {meta.demoLink && (
+              <a
+                href={meta.demoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {meta.demoLink}
+              </a>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={saveMeta} disabled={updateMutation.isPending} size="sm">
+                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* CONVERTED */}
+      {status === 'CONVERTED' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 text-green-500" />
+              {t('demoRequests.detail.converted.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.converted.date')}</Label>
+                <Input
+                  type="date"
+                  value={meta.convertedAt ?? ''}
+                  onChange={(e) => setMetaField('convertedAt', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('demoRequests.detail.converted.plan')}</Label>
+                <Input
+                  placeholder={t('demoRequests.detail.converted.planPlaceholder')}
+                  value={meta.planName ?? ''}
+                  onChange={(e) => setMetaField('planName', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveMeta} disabled={updateMutation.isPending} size="sm">
+                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* REJECTED */}
+      {status === 'REJECTED' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-red-500" />
+              {t('demoRequests.detail.rejected.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t('demoRequests.detail.rejected.reason')}</Label>
+              <Select
+                value={meta.rejectionReason ?? ''}
+                onValueChange={(v) => setMetaField('rejectionReason', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('demoRequests.detail.rejected.reasonPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="budget">{t('demoRequests.detail.rejected.budget')}</SelectItem>
+                  <SelectItem value="timing">{t('demoRequests.detail.rejected.timing')}</SelectItem>
+                  <SelectItem value="different_need">{t('demoRequests.detail.rejected.differentNeed')}</SelectItem>
+                  <SelectItem value="competitor">{t('demoRequests.detail.rejected.competitor')}</SelectItem>
+                  <SelectItem value="other">{t('demoRequests.detail.rejected.other')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('demoRequests.detail.rejected.note')}</Label>
+              <Textarea
+                rows={3}
+                placeholder={t('demoRequests.detail.rejected.notePlaceholder')}
+                value={meta.rejectionNote ?? ''}
+                onChange={(e) => setMetaField('rejectionNote', e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveMeta} disabled={updateMutation.isPending} size="sm">
+                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Notes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <StickyNote className="h-4 w-4" />
+            {t('demoRequests.detail.notes.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            rows={5}
+            placeholder={t('demoRequests.detail.notes.placeholder')}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button onClick={saveNotes} disabled={updateMutation.isPending} size="sm">
+              {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t('common.save')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

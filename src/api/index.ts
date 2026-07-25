@@ -404,6 +404,17 @@ export const storageApi = {
 // Demo Requests
 export type DemoRequestStatus = 'NEW' | 'CONTACTED' | 'DEMO_SCHEDULED' | 'CONVERTED' | 'REJECTED';
 
+export interface DemoRequestStatusMeta {
+  contactedAt?: string;
+  contactChannel?: 'email' | 'phone' | 'visio' | 'linkedin';
+  demoAt?: string;
+  demoLink?: string;
+  convertedAt?: string;
+  planName?: string;
+  rejectionReason?: 'budget' | 'timing' | 'different_need' | 'competitor' | 'other';
+  rejectionNote?: string;
+}
+
 export interface DemoRequest {
   id: string;
   email: string;
@@ -411,6 +422,7 @@ export interface DemoRequest {
   message?: string;
   status: DemoRequestStatus;
   notes?: string;
+  statusMeta?: DemoRequestStatusMeta;
   createdAt: string;
   updatedAt: string;
 }
@@ -419,7 +431,10 @@ export const demoRequestsApi = {
   getAll: (status?: DemoRequestStatus) =>
     api.get<DemoRequest[]>('/admin/demo-requests', { params: status ? { status } : {} }),
 
-  update: (id: string, data: { status?: DemoRequestStatus; notes?: string }) =>
+  getById: (id: string) =>
+    api.get<DemoRequest>(`/admin/demo-requests/${id}`),
+
+  update: (id: string, data: { status?: DemoRequestStatus; notes?: string; statusMeta?: DemoRequestStatusMeta }) =>
     api.patch<DemoRequest>(`/admin/demo-requests/${id}`, data),
 
   delete: (id: string) =>

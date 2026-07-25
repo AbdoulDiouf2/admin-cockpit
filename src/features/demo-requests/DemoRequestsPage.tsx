@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CalendarCheck, Loader2, MoreHorizontal, ChevronDown, Check, StickyNote } from 'lucide-react';
+import { CalendarCheck, Loader2, MoreHorizontal, ChevronDown, Check, StickyNote, ExternalLink } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,7 @@ export function DemoRequestsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<DemoRequestStatus | ''>('');
   const [notesRequest, setNotesRequest] = useState<DemoRequest | null>(null);
   const [editNotes, setEditNotes] = useState('');
@@ -126,7 +128,12 @@ export function DemoRequestsPage() {
       accessorKey: 'company',
       header: t('demoRequests.columns.company'),
       cell: ({ row }) => (
-        <span className="text-sm font-medium">{row.getValue('company')}</span>
+        <button
+          onClick={() => navigate(`/demo-requests/${row.original.id}`)}
+          className="text-sm font-medium hover:text-primary hover:underline text-left"
+        >
+          {row.getValue('company')}
+        </button>
       ),
     },
     {
@@ -209,6 +216,11 @@ export function DemoRequestsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate(`/demo-requests/${req.id}`)} className="flex items-center gap-2">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t('demoRequests.viewDetails')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(req.email)}>
                   Copier l'email
                 </DropdownMenuItem>
