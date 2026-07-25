@@ -14,6 +14,7 @@ import {
   HeartPulse,
   Settings,
   User as UserIcon,
+  CalendarCheck,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -24,9 +25,11 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@/components/ui/command';
+import { useQuery } from '@tanstack/react-query';
 import { useOrganizations } from '@/hooks/use-api';
 import { useAdminUsers } from '@/hooks/use-api';
 import { useAgents } from '@/hooks/use-api';
+import { demoRequestsApi } from '@/api';
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord',      path: '/dashboard',              icon: LayoutDashboard },
@@ -44,6 +47,7 @@ const NAV_ITEMS = [
   { label: "Logs d'audit",         path: '/audit-logs',             icon: ScrollText },
   { label: 'Santé Système',        path: '/health',                 icon: HeartPulse },
   { label: 'Paramètres',           path: '/settings',               icon: Settings },
+  { label: 'Demandes de démo',     path: '/demo-requests',          icon: CalendarCheck },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -66,6 +70,11 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const { data: orgs } = useOrganizations();
   const { data: users } = useAdminUsers();
   const { data: agents } = useAgents();
+  const { data: demoRequests } = useQuery({
+    queryKey: ['demo-requests-search'],
+    queryFn: () => demoRequestsApi.getAll().then((r) => r.data),
+    staleTime: 60 * 1000,
+  });
 
   const go = (path: string) => {
     navigate(path);
@@ -145,6 +154,26 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                   <span>{agent.name}</span>
                   <span className={`ml-2 inline-block h-2 w-2 rounded-full ${STATUS_COLORS[agent.status] ?? 'bg-gray-400'}`} />
                   <span className="ml-1 text-xs text-muted-foreground capitalize">{agent.status}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {/* Demandes de démo */}
+        {demoRequests && demoRequests.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Demandes de démo">
+              {demoRequests.slice(0, MAX_RESULTS).map((req) => (
+                <CommandItem
+                  key={req.id}
+                  value={`demo-${req.company} ${req.email}`}
+                  onSelect={() => go(`/demo-requests/${req.id}`)}
+                >
+                  <CalendarCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span>{req.company}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{req.email}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

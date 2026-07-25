@@ -119,6 +119,7 @@ export function DemoRequestsPage() {
         <a
           href={`mailto:${row.getValue('email')}`}
           className="text-primary hover:underline text-sm font-medium"
+          onClick={(e) => e.stopPropagation()}
         >
           {row.getValue('email')}
         </a>
@@ -128,12 +129,7 @@ export function DemoRequestsPage() {
       accessorKey: 'company',
       header: t('demoRequests.columns.company'),
       cell: ({ row }) => (
-        <button
-          onClick={() => navigate(`/demo-requests/${row.original.id}`)}
-          className="text-sm font-medium hover:text-primary hover:underline text-left"
-        >
-          {row.getValue('company')}
-        </button>
+        <span className="text-sm font-medium">{row.getValue('company')}</span>
       ),
     },
     {
@@ -165,6 +161,7 @@ export function DemoRequestsPage() {
             <DropdownMenuTrigger asChild>
               <button
                 disabled={isPending}
+                onClick={(e) => e.stopPropagation()}
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer hover:opacity-75 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${badge.className}`}
               >
                 {isPending ? (
@@ -206,7 +203,7 @@ export function DemoRequestsPage() {
       cell: ({ row }) => {
         const req = row.original;
         return (
-          <div className="text-right">
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -273,6 +270,7 @@ export function DemoRequestsPage() {
               columns={columns}
               data={filteredRequests}
               searchKey="email"
+              onRowClick={(row) => navigate(`/demo-requests/${row.id}`)}
               extraFilters={
                 <FilterBar
                   filters={[
