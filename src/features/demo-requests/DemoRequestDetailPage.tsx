@@ -45,6 +45,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/features/auth/AuthContext';
 import { markCommentIdsAsRead } from '@/lib/notifReadState';
+import { DatePicker } from '@/components/shared/DatePicker';
+import { DateTimePicker } from '@/components/shared/DateTimePicker';
 import {
   demoRequestsApi,
   DemoRequestStatus,
@@ -131,8 +133,12 @@ export function DemoRequestDetailPage() {
   const updateMutation = useMutation({
     mutationFn: (data: { status?: DemoRequestStatus; statusMeta?: DemoRequestStatusMeta }) =>
       demoRequestsApi.update(id!, data),
-    onSuccess: (resp) => {
-      queryClient.setQueryData(['demo-request', id], (old: any) => ({ ...old, ...resp.data }));
+    onSuccess: (resp, variables) => {
+      if (variables.status) {
+        queryClient.invalidateQueries({ queryKey: ['demo-request', id] });
+      } else {
+        queryClient.setQueryData(['demo-request', id], (old: any) => ({ ...old, ...resp.data }));
+      }
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
       queryClient.invalidateQueries({ queryKey: ['demo-requests-stats'] });
       toast({ title: t('common.success'), description: t('demoRequests.updateSuccess') });
@@ -266,7 +272,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.contact.date')}</Label>
-                    <Input type="date" value={meta.contactedAt ?? ''} onChange={(e) => setMetaField('contactedAt', e.target.value)} />
+                    <DatePicker value={meta.contactedAt} onChange={(v) => setMetaField('contactedAt', v)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.contact.channel')}</Label>
@@ -304,7 +310,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.demo.dateTime')}</Label>
-                    <Input type="datetime-local" value={meta.demoAt ?? ''} onChange={(e) => setMetaField('demoAt', e.target.value)} />
+                    <DateTimePicker value={meta.demoAt} onChange={(v) => setMetaField('demoAt', v)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.demo.link')}</Label>
@@ -340,7 +346,7 @@ export function DemoRequestDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.converted.date')}</Label>
-                    <Input type="date" value={meta.convertedAt ?? ''} onChange={(e) => setMetaField('convertedAt', e.target.value)} />
+                    <DatePicker value={meta.convertedAt} onChange={(v) => setMetaField('convertedAt', v)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('demoRequests.detail.converted.plan')}</Label>
