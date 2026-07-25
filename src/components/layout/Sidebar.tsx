@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { bugTrackerApi } from '@/features/bug-tracker/services/bugTrackerApi';
+import { demoRequestsApi } from '@/api';
 import {
   LayoutDashboard,
   Building2,
@@ -92,7 +93,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { data: stats } = useQuery({
     queryKey: ['bugs-stats'],
     queryFn: () => bugTrackerApi.getStats(),
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   });
 
   const unresolvedCount = React.useMemo(() => {
@@ -100,6 +101,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const { nouveau = 0, en_analyse = 0, en_cours = 0, en_test = 0 } = stats.byStatus;
     return nouveau + en_analyse + en_cours + en_test;
   }, [stats]);
+
+  const { data: demoStats } = useQuery({
+    queryKey: ['demo-requests-stats'],
+    queryFn: () => demoRequestsApi.getStats().then((r) => r.data),
+    refetchInterval: 30000,
+  });
+
+  const newDemoCount = demoStats?.new ?? 0;
 
   return (
     <>
@@ -156,7 +165,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     const isActive = location.pathname === item.path;
                     const Icon = item.icon;
                     const isBugTracker = item.path === '/bug-tracker';
-                    const showBadge = isBugTracker && unresolvedCount > 0;
+                    const isDemoRequests = item.path === '/demo-requests';
+                    const showBadge = (isBugTracker && unresolvedCount > 0) || (isDemoRequests && newDemoCount > 0);
+                    const badgeCount = isBugTracker ? unresolvedCount : newDemoCount;
 
                     return (
                       <li key={item.path}>
@@ -186,7 +197,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                               "flex items-center justify-center bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 animate-in zoom-in-50",
                               collapsed ? "absolute top-1 right-2 scale-75" : "ml-auto"
                             )}>
-                              {unresolvedCount > 99 ? '99+' : unresolvedCount}
+                              {badgeCount > 99 ? '99+' : badgeCount}
                             </span>
                           )}
                         </NavLink>

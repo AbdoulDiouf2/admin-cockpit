@@ -424,6 +424,9 @@ export const demoRequestsApi = {
 
   delete: (id: string) =>
     api.delete(`/admin/demo-requests/${id}`),
+
+  getStats: () =>
+    api.get<{ new: number }>('/admin/demo-requests/stats'),
 };
 
 // Agent Releases
