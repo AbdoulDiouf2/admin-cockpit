@@ -101,6 +101,7 @@ export const en = {
       notes: 'Internal Notes',
       notesPlaceholder: 'Notes visible only to the team…',
     },
+    editNotes: 'Edit notes',
     noMessage: '—',
     deleteConfirmTitle: 'Delete Request',
     deleteConfirmDesc: 'Delete the request from "{{company}}"? This action cannot be undone.',
