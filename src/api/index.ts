@@ -423,6 +423,14 @@ export interface DemoRequestNote {
   demoRequest?: { id: string; company: string; email: string };
 }
 
+export interface DemoRequestStatusEvent {
+  id: string;
+  fromStatus: DemoRequestStatus;
+  toStatus: DemoRequestStatus;
+  createdAt: string;
+  author: { id: string; firstName?: string | null; lastName?: string | null; email: string };
+}
+
 export interface DemoRequest {
   id: string;
   email: string;
@@ -432,6 +440,7 @@ export interface DemoRequest {
   notes?: string;
   statusMeta?: DemoRequestStatusMeta;
   teamNotes?: DemoRequestNote[];
+  statusEvents?: DemoRequestStatusEvent[];
   createdAt: string;
   updatedAt: string;
 }

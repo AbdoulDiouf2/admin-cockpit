@@ -19,6 +19,7 @@ import {
   XCircle,
   ExternalLink,
   Send,
+  ArrowRight,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +49,8 @@ import {
   demoRequestsApi,
   DemoRequestStatus,
   DemoRequestStatusMeta,
+  DemoRequestNote,
+  DemoRequestStatusEvent,
 } from '@/api';
 
 const STATUS_BADGE: Record<DemoRequestStatus, { labelKey: string; className: string }> = {
@@ -390,9 +393,49 @@ export function DemoRequestDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Historique des changements de statut */}
+          {(request.statusEvents?.length ?? 0) > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4" />
+                  {t('demoRequests.detail.statusHistory')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {request.statusEvents!.map((ev) => {
+                  const fromBadge = STATUS_BADGE[ev.fromStatus];
+                  const toBadge = STATUS_BADGE[ev.toStatus];
+                  const fullName = getFullName(ev.author.firstName, ev.author.lastName, ev.author.email);
+                  const initials = getInitials(ev.author.firstName, ev.author.lastName, ev.author.email);
+                  const color = getAvatarColor(ev.author.id);
+                  return (
+                    <div key={ev.id} className="flex gap-2 items-center text-xs text-muted-foreground flex-wrap">
+                      <div className={`h-6 w-6 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-bold shrink-0`}>
+                        {initials}
+                      </div>
+                      <span className="font-medium text-foreground">{fullName}</span>
+                      <span>{t('demoRequests.detail.statusChanged')}</span>
+                      <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${fromBadge.className}`}>
+                        {t(fromBadge.labelKey)}
+                      </span>
+                      <ArrowRight className="h-3 w-3 shrink-0" />
+                      <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${toBadge.className}`}>
+                        {t(toBadge.labelKey)}
+                      </span>
+                      <span className="ml-auto shrink-0 text-[10px]">
+                        {format(new Date(ev.createdAt), "dd/MM/yyyy 'à' HH:mm", { locale: dateLocale })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* ── Colonne droite : discussion interne ── */}
+        {/* ── Colonne droite : notes internes ── */}
         <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader className="pb-3">

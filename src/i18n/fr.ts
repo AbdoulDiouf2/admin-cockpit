@@ -148,6 +148,8 @@ export const fr = {
         empty: 'Aucune note pour l\'instant',
         send: 'Envoyer',
       },
+      statusChanged: 'a changé le statut',
+      statusHistory: 'Historique des statuts',
     },
     deleteConfirmTitle: 'Supprimer la demande',
     deleteConfirmDesc: 'Supprimer la demande de « {{company}} » ? Cette action est irréversible.',

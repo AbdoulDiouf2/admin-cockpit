@@ -148,6 +148,8 @@ export const en = {
         empty: 'No notes yet',
         send: 'Send',
       },
+      statusChanged: 'changed the status',
+      statusHistory: 'Status history',
     },
     deleteConfirmTitle: 'Delete Request',
     deleteConfirmDesc: 'Delete the request from "{{company}}"? This action cannot be undone.',
