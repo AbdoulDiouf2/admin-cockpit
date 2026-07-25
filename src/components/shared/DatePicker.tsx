@@ -33,13 +33,9 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode="single"
           selected={selected}
-          onSelect={(date) => {
-            if (date) onChange(format(date, 'yyyy-MM-dd'));
-          }}
+          onSelect={(date) => onChange(format(date, 'yyyy-MM-dd'))}
           locale={locale}
-          initialFocus
         />
       </PopoverContent>
     </Popover>

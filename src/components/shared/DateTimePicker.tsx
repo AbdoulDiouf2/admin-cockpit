@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, parseISO, setHours, setMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,8 +23,7 @@ export function DateTimePicker({ value, onChange, placeholder, className }: Date
   const parsed = value ? parseISO(value) : undefined;
   const [timeStr, setTimeStr] = useState(parsed ? format(parsed, 'HH:mm') : '09:00');
 
-  function handleDaySelect(date: Date | undefined) {
-    if (!date) return;
+  function handleDaySelect(date: Date) {
     const [h, m] = timeStr.split(':').map(Number);
     const combined = setMinutes(setHours(date, h || 0), m || 0);
     onChange(format(combined, "yyyy-MM-dd'T'HH:mm"));
@@ -54,14 +53,12 @@ export function DateTimePicker({ value, onChange, placeholder, className }: Date
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode="single"
           selected={parsed}
           onSelect={handleDaySelect}
           locale={locale}
-          initialFocus
         />
         <div className="border-t p-3 flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
           <Input
             type="time"
             value={timeStr}
