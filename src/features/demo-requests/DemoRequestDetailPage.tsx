@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,13 +12,13 @@ import {
   ChevronDown,
   Check,
   Loader2,
-  StickyNote,
   Phone,
   Video,
   Link2,
   BadgeCheck,
   XCircle,
   ExternalLink,
+  Send,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +42,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/features/auth/AuthContext';
+import { markCommentIdsAsRead } from '@/lib/notifReadState';
 import {
   demoRequestsApi,
   DemoRequestStatus,
@@ -56,14 +60,36 @@ const STATUS_BADGE: Record<DemoRequestStatus, { labelKey: string; className: str
 
 const ALL_STATUSES: DemoRequestStatus[] = ['NEW', 'CONTACTED', 'DEMO_SCHEDULED', 'CONVERTED', 'REJECTED'];
 
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-violet-500', 'bg-emerald-500',
+  'bg-orange-500', 'bg-rose-500', 'bg-cyan-500',
+];
+
+function getAvatarColor(authorId: string) {
+  return AVATAR_COLORS[(authorId?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
+}
+
+function getInitials(firstName?: string | null, lastName?: string | null, email?: string) {
+  const f = (firstName?.[0] ?? '').toUpperCase();
+  const l = (lastName?.[0] ?? '').toUpperCase();
+  return (f + l) || (email?.[0]?.toUpperCase() ?? '?');
+}
+
+function getFullName(firstName?: string | null, lastName?: string | null, email?: string) {
+  const name = `${firstName ?? ''} ${lastName ?? ''}`.trim();
+  return name || email || '?';
+}
+
 export function DemoRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
-
+  const { user: currentUser } = useAuth();
   const dateLocale = i18n.language === 'fr' ? fr : undefined;
+
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const { data: request, isLoading, error } = useQuery({
     queryKey: ['demo-request', id],
@@ -74,44 +100,63 @@ export function DemoRequestDetailPage() {
     enabled: !!id,
   });
 
-  const [notes, setNotes] = useState('');
   const [meta, setMeta] = useState<DemoRequestStatusMeta>({});
+  const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     if (request) {
-      setNotes(request.notes ?? '');
       setMeta(request.statusMeta ?? {});
     }
   }, [request]);
 
+  // Auto-scroll to bottom when notes load
+  useEffect(() => {
+    if (request?.teamNotes?.length) {
+      setTimeout(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [request?.teamNotes?.length]);
+
+  // Mark all team notes as read when page opens
+  useEffect(() => {
+    if (request?.teamNotes?.length && currentUser?.id) {
+      markCommentIdsAsRead(currentUser.id, request.teamNotes.map((n) => n.id));
+    }
+  }, [request?.teamNotes, currentUser?.id]);
+
   const updateMutation = useMutation({
-    mutationFn: (data: { status?: DemoRequestStatus; notes?: string; statusMeta?: DemoRequestStatusMeta }) =>
+    mutationFn: (data: { status?: DemoRequestStatus; statusMeta?: DemoRequestStatusMeta }) =>
       demoRequestsApi.update(id!, data),
     onSuccess: (resp) => {
-      queryClient.setQueryData(['demo-request', id], resp.data);
+      queryClient.setQueryData(['demo-request', id], (old: any) => ({ ...old, ...resp.data }));
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
       queryClient.invalidateQueries({ queryKey: ['demo-requests-stats'] });
       toast({ title: t('common.success'), description: t('demoRequests.updateSuccess') });
     },
     onError: (err: any) => {
-      toast({
-        title: t('common.error'),
-        description: err.response?.data?.message || t('demoRequests.updateError'),
-        variant: 'destructive',
-      });
+      toast({ title: t('common.error'), description: err.response?.data?.message || t('demoRequests.updateError'), variant: 'destructive' });
     },
   });
 
-  function saveNotes() {
-    updateMutation.mutate({ notes: notes || undefined });
+  const addNoteMutation = useMutation({
+    mutationFn: (content: string) => demoRequestsApi.addNote(id!, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['demo-request', id] });
+      queryClient.invalidateQueries({ queryKey: ['demo-notes-recent'] });
+      setNoteText('');
+    },
+    onError: (err: any) => {
+      toast({ title: t('common.error'), description: err.response?.data?.message || t('demoRequests.updateError'), variant: 'destructive' });
+    },
+  });
+
+  function changeStatus(status: DemoRequestStatus) {
+    updateMutation.mutate({ status });
   }
 
   function saveMeta() {
     updateMutation.mutate({ statusMeta: meta });
-  }
-
-  function changeStatus(status: DemoRequestStatus) {
-    updateMutation.mutate({ status });
   }
 
   function setMetaField(field: keyof DemoRequestStatusMeta, value: string) {
@@ -152,15 +197,11 @@ export function DemoRequestDetailPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold">{request.company}</h1>
-              <a
-                href={`mailto:${request.email}`}
-                className="text-sm text-primary hover:underline flex items-center gap-1 mt-1"
-              >
+              <a href={`mailto:${request.email}`} className="text-sm text-primary hover:underline flex items-center gap-1 mt-1">
                 <Mail className="h-3.5 w-3.5" />
                 {request.email}
               </a>
             </div>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -176,17 +217,9 @@ export function DemoRequestDetailPage() {
                 {ALL_STATUSES.map((s) => {
                   const b = STATUS_BADGE[s];
                   return (
-                    <DropdownMenuItem
-                      key={s}
-                      onClick={() => { if (s !== status) changeStatus(s); }}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <span className="w-3.5 shrink-0">
-                        {s === status && <Check className="h-3.5 w-3.5" />}
-                      </span>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${b.className}`}>
-                        {t(b.labelKey)}
-                      </span>
+                    <DropdownMenuItem key={s} onClick={() => { if (s !== status) changeStatus(s); }} className="flex items-center gap-2 cursor-pointer">
+                      <span className="w-3.5 shrink-0">{s === status && <Check className="h-3.5 w-3.5" />}</span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${b.className}`}>{t(b.labelKey)}</span>
                     </DropdownMenuItem>
                   );
                 })}
@@ -225,21 +258,12 @@ export function DemoRequestDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.contact.date')}</Label>
-                <Input
-                  type="date"
-                  value={meta.contactedAt ?? ''}
-                  onChange={(e) => setMetaField('contactedAt', e.target.value)}
-                />
+                <Input type="date" value={meta.contactedAt ?? ''} onChange={(e) => setMetaField('contactedAt', e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.contact.channel')}</Label>
-                <Select
-                  value={meta.contactChannel ?? ''}
-                  onValueChange={(v) => setMetaField('contactChannel', v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('demoRequests.detail.contact.channelPlaceholder')} />
-                  </SelectTrigger>
+                <Select value={meta.contactChannel ?? ''} onValueChange={(v) => setMetaField('contactChannel', v)}>
+                  <SelectTrigger><SelectValue placeholder={t('demoRequests.detail.contact.channelPlaceholder')} /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">{t('demoRequests.detail.contact.email')}</SelectItem>
                     <SelectItem value="phone">{t('demoRequests.detail.contact.phone')}</SelectItem>
@@ -272,29 +296,15 @@ export function DemoRequestDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.demo.dateTime')}</Label>
-                <Input
-                  type="datetime-local"
-                  value={meta.demoAt ?? ''}
-                  onChange={(e) => setMetaField('demoAt', e.target.value)}
-                />
+                <Input type="datetime-local" value={meta.demoAt ?? ''} onChange={(e) => setMetaField('demoAt', e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.demo.link')}</Label>
-                <Input
-                  type="url"
-                  placeholder={t('demoRequests.detail.demo.linkPlaceholder')}
-                  value={meta.demoLink ?? ''}
-                  onChange={(e) => setMetaField('demoLink', e.target.value)}
-                />
+                <Input type="url" placeholder={t('demoRequests.detail.demo.linkPlaceholder')} value={meta.demoLink ?? ''} onChange={(e) => setMetaField('demoLink', e.target.value)} />
               </div>
             </div>
             {meta.demoLink && (
-              <a
-                href={meta.demoLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-              >
+              <a href={meta.demoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
                 <ExternalLink className="h-3.5 w-3.5" />
                 {meta.demoLink}
               </a>
@@ -322,19 +332,11 @@ export function DemoRequestDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.converted.date')}</Label>
-                <Input
-                  type="date"
-                  value={meta.convertedAt ?? ''}
-                  onChange={(e) => setMetaField('convertedAt', e.target.value)}
-                />
+                <Input type="date" value={meta.convertedAt ?? ''} onChange={(e) => setMetaField('convertedAt', e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('demoRequests.detail.converted.plan')}</Label>
-                <Input
-                  placeholder={t('demoRequests.detail.converted.planPlaceholder')}
-                  value={meta.planName ?? ''}
-                  onChange={(e) => setMetaField('planName', e.target.value)}
-                />
+                <Input placeholder={t('demoRequests.detail.converted.planPlaceholder')} value={meta.planName ?? ''} onChange={(e) => setMetaField('planName', e.target.value)} />
               </div>
             </div>
             <div className="flex justify-end">
@@ -359,13 +361,8 @@ export function DemoRequestDetailPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>{t('demoRequests.detail.rejected.reason')}</Label>
-              <Select
-                value={meta.rejectionReason ?? ''}
-                onValueChange={(v) => setMetaField('rejectionReason', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('demoRequests.detail.rejected.reasonPlaceholder')} />
-                </SelectTrigger>
+              <Select value={meta.rejectionReason ?? ''} onValueChange={(v) => setMetaField('rejectionReason', v)}>
+                <SelectTrigger><SelectValue placeholder={t('demoRequests.detail.rejected.reasonPlaceholder')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="budget">{t('demoRequests.detail.rejected.budget')}</SelectItem>
                   <SelectItem value="timing">{t('demoRequests.detail.rejected.timing')}</SelectItem>
@@ -377,12 +374,7 @@ export function DemoRequestDetailPage() {
             </div>
             <div className="space-y-1.5">
               <Label>{t('demoRequests.detail.rejected.note')}</Label>
-              <Textarea
-                rows={3}
-                placeholder={t('demoRequests.detail.rejected.notePlaceholder')}
-                value={meta.rejectionNote ?? ''}
-                onChange={(e) => setMetaField('rejectionNote', e.target.value)}
-              />
+              <Textarea rows={3} placeholder={t('demoRequests.detail.rejected.notePlaceholder')} value={meta.rejectionNote ?? ''} onChange={(e) => setMetaField('rejectionNote', e.target.value)} />
             </div>
             <div className="flex justify-end">
               <Button onClick={saveMeta} disabled={updateMutation.isPending} size="sm">
@@ -394,26 +386,74 @@ export function DemoRequestDetailPage() {
         </Card>
       )}
 
-      {/* Notes */}
+      {/* Discussion interne */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <StickyNote className="h-4 w-4" />
-            {t('demoRequests.detail.notes.title')}
+            <MessageSquare className="h-4 w-4" />
+            {t('demoRequests.detail.notes.title')} ({request.teamNotes?.length ?? 0})
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            rows={5}
-            placeholder={t('demoRequests.detail.notes.placeholder')}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <div className="flex justify-end">
-            <Button onClick={saveNotes} disabled={updateMutation.isPending} size="sm">
-              {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {t('common.save')}
-            </Button>
+        <CardContent className="space-y-1 px-4">
+          <ScrollArea className="h-[320px] mb-4 pr-4">
+            {request.teamNotes?.length ? (
+              <div className="space-y-4">
+                {request.teamNotes.map((note) => {
+                  const { author } = note;
+                  const fullName = getFullName(author.firstName, author.lastName, author.email);
+                  const initials = getInitials(author.firstName, author.lastName, author.email);
+                  const color = getAvatarColor(author.id);
+                  return (
+                    <div key={note.id} className="flex gap-3 items-start">
+                      <div className={`h-8 w-8 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5`}>
+                        {initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-sm font-semibold leading-none">{fullName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(note.createdAt), 'dd/MM/yyyy HH:mm')}
+                          </span>
+                        </div>
+                        <div className="rounded-2xl rounded-tl-sm px-3 py-2 text-sm whitespace-pre-wrap bg-muted text-foreground">
+                          {note.content}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={commentsEndRef} />
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-sm text-muted-foreground py-6">{t('demoRequests.detail.notes.empty')}</p>
+              </div>
+            )}
+          </ScrollArea>
+
+          <Separator className="my-3" />
+
+          <div className="space-y-3 pt-1 pb-1">
+            <Textarea
+              placeholder={t('demoRequests.detail.notes.placeholder')}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => addNoteMutation.mutate(noteText.trim())}
+                disabled={!noteText.trim() || addNoteMutation.isPending}
+              >
+                {addNoteMutation.isPending
+                  ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  : <Send className="h-3.5 w-3.5 mr-1.5" />
+                }
+                {t('demoRequests.detail.notes.send')}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

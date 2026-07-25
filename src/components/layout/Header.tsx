@@ -59,6 +59,8 @@ const PAGE_TITLE_MAP: { pattern: RegExp; key: string; parentPath?: string; subKe
   { pattern: /^\/bug-tracker\/new/, key: 'nav.bugTracker', parentPath: '/bug-tracker', subKey: 'bugTracker.newBug' },
   { pattern: /^\/bug-tracker\/[^/]+/, key: 'nav.bugTracker', parentPath: '/bug-tracker', subKey: 'bugTracker.detailsTitle' },
   { pattern: /^\/bug-tracker/, key: 'nav.bugTracker' },
+  { pattern: /^\/demo-requests\/[^/]+/, key: 'nav.demoRequests', parentPath: '/demo-requests', subKey: 'demoRequests.detail.breadcrumb' },
+  { pattern: /^\/demo-requests/, key: 'nav.demoRequests' },
   { pattern: /^\/agents\/[^/]+/, key: 'nav.agents', parentPath: '/agents' },
   { pattern: /^\/agents/, key: 'nav.agents' },
   { pattern: /^\/audit-logs\/[^/]+/, key: 'nav.auditLogs', parentPath: '/audit-logs' },

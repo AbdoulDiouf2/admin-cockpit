@@ -105,6 +105,7 @@ export const fr = {
     viewDetails: 'Voir les détails',
     noMessage: '—',
     detail: {
+      breadcrumb: 'Détail',
       notFound: 'Demande introuvable',
       submittedOn: 'Soumis le {{date}}',
       contact: {
@@ -143,7 +144,9 @@ export const fr = {
       },
       notes: {
         title: 'Notes internes',
-        placeholder: "Notes visibles uniquement par l'équipe…",
+        placeholder: "Écrire une note…",
+        empty: 'Aucune note pour l\'instant',
+        send: 'Envoyer',
       },
     },
     deleteConfirmTitle: 'Supprimer la demande',

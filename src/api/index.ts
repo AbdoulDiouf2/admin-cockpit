@@ -415,6 +415,14 @@ export interface DemoRequestStatusMeta {
   rejectionNote?: string;
 }
 
+export interface DemoRequestNote {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: { id: string; firstName?: string | null; lastName?: string | null; email: string };
+  demoRequest?: { id: string; company: string; email: string };
+}
+
 export interface DemoRequest {
   id: string;
   email: string;
@@ -423,6 +431,7 @@ export interface DemoRequest {
   status: DemoRequestStatus;
   notes?: string;
   statusMeta?: DemoRequestStatusMeta;
+  teamNotes?: DemoRequestNote[];
   createdAt: string;
   updatedAt: string;
 }
@@ -439,6 +448,12 @@ export const demoRequestsApi = {
 
   delete: (id: string) =>
     api.delete(`/admin/demo-requests/${id}`),
+
+  addNote: (id: string, content: string) =>
+    api.post<DemoRequestNote>(`/admin/demo-requests/${id}/notes`, { content }),
+
+  getRecentNotes: (since: string) =>
+    api.get<DemoRequestNote[]>('/admin/demo-requests/notes/recent', { params: { since } }),
 
   getStats: () =>
     api.get<{ new: number }>('/admin/demo-requests/stats'),

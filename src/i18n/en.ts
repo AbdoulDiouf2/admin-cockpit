@@ -105,6 +105,7 @@ export const en = {
     viewDetails: 'View details',
     noMessage: '—',
     detail: {
+      breadcrumb: 'Details',
       notFound: 'Request not found',
       submittedOn: 'Submitted on {{date}}',
       contact: {
@@ -143,7 +144,9 @@ export const en = {
       },
       notes: {
         title: 'Internal Notes',
-        placeholder: 'Notes visible only to the team…',
+        placeholder: 'Write a note…',
+        empty: 'No notes yet',
+        send: 'Send',
       },
     },
     deleteConfirmTitle: 'Delete Request',
