@@ -101,6 +101,7 @@ export const fr = {
       notes: 'Notes internes',
       notesPlaceholder: "Notes visibles uniquement par l'équipe…",
     },
+    editNotes: 'Modifier les notes',
     noMessage: '—',
     deleteConfirmTitle: 'Supprimer la demande',
     deleteConfirmDesc: 'Supprimer la demande de « {{company}} » ? Cette action est irréversible.',

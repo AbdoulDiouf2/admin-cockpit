@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { CalendarCheck, Loader2, MoreHorizontal } from 'lucide-react';
+import { CalendarCheck, Loader2, MoreHorizontal, ChevronDown, Check, StickyNote } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,13 +27,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { demoRequestsApi, DemoRequest, DemoRequestStatus } from '@/api';
 
@@ -53,8 +46,7 @@ export function DemoRequestsPage() {
   const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<DemoRequestStatus | ''>('');
-  const [editRequest, setEditRequest] = useState<DemoRequest | null>(null);
-  const [editStatus, setEditStatus] = useState<DemoRequestStatus>('NEW');
+  const [notesRequest, setNotesRequest] = useState<DemoRequest | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [deleteRequest, setDeleteRequest] = useState<DemoRequest | null>(null);
 
@@ -73,8 +65,9 @@ export function DemoRequestsPage() {
       demoRequestsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['demo-requests-stats'] });
       toast({ title: t('common.success'), description: t('demoRequests.updateSuccess') });
-      setEditRequest(null);
+      setNotesRequest(null);
     },
     onError: (err: any) => {
       toast({
@@ -89,6 +82,7 @@ export function DemoRequestsPage() {
     mutationFn: (id: string) => demoRequestsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['demo-requests-stats'] });
       toast({ title: t('common.success'), description: t('demoRequests.deleteSuccess') });
       setDeleteRequest(null);
     },
@@ -101,9 +95,8 @@ export function DemoRequestsPage() {
     },
   });
 
-  function openEdit(req: DemoRequest) {
-    setEditRequest(req);
-    setEditStatus(req.status);
+  function openNotes(req: DemoRequest) {
+    setNotesRequest(req);
     setEditNotes(req.notes ?? '');
   }
 
@@ -156,12 +149,48 @@ export function DemoRequestsPage() {
       accessorKey: 'status',
       header: t('demoRequests.columns.status'),
       cell: ({ row }) => {
+        const req = row.original;
         const status = row.getValue('status') as DemoRequestStatus;
         const badge = STATUS_BADGE[status];
+        const isPending = updateMutation.isPending && updateMutation.variables?.id === req.id;
         return (
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>
-            {badge.label}
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                disabled={isPending}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer hover:opacity-75 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${badge.className}`}
+              >
+                {isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : null}
+                {badge.label}
+                <ChevronDown className="h-3 w-3 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {ALL_STATUSES.map((s) => {
+                const b = STATUS_BADGE[s];
+                return (
+                  <DropdownMenuItem
+                    key={s}
+                    onClick={() => {
+                      if (s !== status) {
+                        updateMutation.mutate({ id: req.id, data: { status: s } });
+                      }
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="w-3 shrink-0">
+                      {s === status && <Check className="h-3 w-3" />}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${b.className}`}>
+                      {b.label}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -184,8 +213,9 @@ export function DemoRequestsPage() {
                   Copier l'email
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => openEdit(req)}>
-                  {t('common.edit')}
+                <DropdownMenuItem onClick={() => openNotes(req)} className="flex items-center gap-2">
+                  <StickyNote className="h-3.5 w-3.5" />
+                  {t('demoRequests.editNotes')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -254,53 +284,36 @@ export function DemoRequestsPage() {
         </CardContent>
       </Card>
 
-      {/* Edit modal */}
-      <Dialog open={editRequest !== null} onOpenChange={(open) => { if (!open) setEditRequest(null); }}>
+      {/* Notes modal */}
+      <Dialog open={notesRequest !== null} onOpenChange={(open) => { if (!open) setNotesRequest(null); }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>{t('demoRequests.edit.title')}</DialogTitle>
+            <DialogTitle>{t('demoRequests.edit.notes')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-muted-foreground">
-                {editRequest?.company} — <span className="font-normal">{editRequest?.email}</span>
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('demoRequests.edit.status')}</Label>
-              <Select value={editStatus} onValueChange={(v) => setEditStatus(v as DemoRequestStatus)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALL_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STATUS_BADGE[s].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {notesRequest?.company} — {notesRequest?.email}
+            </p>
             <div className="space-y-1.5">
               <Label>{t('demoRequests.edit.notes')}</Label>
               <Textarea
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 placeholder={t('demoRequests.edit.notesPlaceholder')}
-                rows={4}
+                rows={5}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRequest(null)}>
+            <Button variant="outline" onClick={() => setNotesRequest(null)}>
               {t('common.cancel')}
             </Button>
             <Button
               onClick={() =>
-                editRequest &&
+                notesRequest &&
                 updateMutation.mutate({
-                  id: editRequest.id,
-                  data: { status: editStatus, notes: editNotes || undefined },
+                  id: notesRequest.id,
+                  data: { notes: editNotes || undefined },
                 })
               }
               disabled={updateMutation.isPending}
