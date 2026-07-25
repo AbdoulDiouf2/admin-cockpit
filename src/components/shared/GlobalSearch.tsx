@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Building2,
@@ -66,7 +65,6 @@ interface GlobalSearchProps {
 
 export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { data: orgs } = useOrganizations();
   const { data: users } = useAdminUsers();
   const { data: agents } = useAgents();

@@ -14,7 +14,6 @@ import {
   Loader2,
   Phone,
   Video,
-  Link2,
   BadgeCheck,
   XCircle,
   ExternalLink,
@@ -51,8 +50,6 @@ import {
   demoRequestsApi,
   DemoRequestStatus,
   DemoRequestStatusMeta,
-  DemoRequestNote,
-  DemoRequestStatusEvent,
 } from '@/api';
 
 const STATUS_BADGE: Record<DemoRequestStatus, { labelKey: string; className: string }> = {
