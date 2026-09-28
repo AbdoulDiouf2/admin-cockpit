@@ -60,7 +60,7 @@ export interface Bug {
     firstName?: string;
     lastName?: string;
     name?: string;
-  };
+  } | null;
   organizationId?: string;
   organization?: {
     id: string;

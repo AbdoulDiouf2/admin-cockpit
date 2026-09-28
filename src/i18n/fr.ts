@@ -1,6 +1,7 @@
 export const fr = {
   common: {
     appName: 'Administration du Cockpit',
+    deletedUser: 'Utilisateur supprimé',
     loading: 'Chargement...',
     save: 'Enregistrer',
     cancel: 'Annuler',

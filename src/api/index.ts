@@ -419,7 +419,7 @@ export interface DemoRequestNote {
   id: string;
   content: string;
   createdAt: string;
-  author: { id: string; firstName?: string | null; lastName?: string | null; email: string };
+  author: { id: string; firstName?: string | null; lastName?: string | null; email: string } | null;
   demoRequest?: { id: string; company: string; email: string };
 }
 
@@ -428,7 +428,7 @@ export interface DemoRequestStatusEvent {
   fromStatus: DemoRequestStatus;
   toStatus: DemoRequestStatus;
   createdAt: string;
-  author: { id: string; firstName?: string | null; lastName?: string | null; email: string };
+  author: { id: string; firstName?: string | null; lastName?: string | null; email: string } | null;
 }
 
 export interface DemoRequest {

@@ -410,9 +410,14 @@ export function DemoRequestDetailPage() {
                 {request.statusEvents!.map((ev) => {
                   const fromBadge = STATUS_BADGE[ev.fromStatus];
                   const toBadge = STATUS_BADGE[ev.toStatus];
-                  const fullName = getFullName(ev.author.firstName, ev.author.lastName, ev.author.email);
-                  const initials = getInitials(ev.author.firstName, ev.author.lastName, ev.author.email);
-                  const color = getAvatarColor(ev.author.id);
+                  // author est null si le compte auteur a été supprimé (anonymisation)
+                  const fullName = ev.author
+                    ? getFullName(ev.author.firstName, ev.author.lastName, ev.author.email)
+                    : t('common.deletedUser');
+                  const initials = ev.author
+                    ? getInitials(ev.author.firstName, ev.author.lastName, ev.author.email)
+                    : '?';
+                  const color = getAvatarColor(ev.author?.id ?? ev.id);
                   return (
                     <div key={ev.id} className="flex gap-2 items-center text-xs text-muted-foreground flex-wrap">
                       <div className={`h-6 w-6 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-bold shrink-0`}>
@@ -453,9 +458,14 @@ export function DemoRequestDetailPage() {
                   <div className="space-y-4">
                     {request.teamNotes.map((note) => {
                       const { author } = note;
-                      const fullName = getFullName(author.firstName, author.lastName, author.email);
-                      const initials = getInitials(author.firstName, author.lastName, author.email);
-                      const color = getAvatarColor(author.id);
+                      // author est null si le compte auteur a été supprimé (anonymisation)
+                      const fullName = author
+                        ? getFullName(author.firstName, author.lastName, author.email)
+                        : t('common.deletedUser');
+                      const initials = author
+                        ? getInitials(author.firstName, author.lastName, author.email)
+                        : '?';
+                      const color = getAvatarColor(author?.id ?? note.id);
                       return (
                         <div key={note.id} className="flex gap-2.5 items-start">
                           <div className={`h-7 w-7 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5`}>
