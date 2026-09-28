@@ -62,6 +62,9 @@ export function OrganizationsPage() {
     mutationFn: (orgId: string) => organizationsApi.delete(orgId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      // Les utilisateurs de l'org sont supprimés en cascade côté base : sans ça,
+      // la page Utilisateurs garde des lignes fantômes jusqu'au prochain refetch.
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast({
         title: t('common.success'),
         description: t('organizations.deleteSuccess'),
